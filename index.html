@@ -49,13 +49,14 @@
         #skip-back-btn { order: 0; } #video-box { order: 1; } #skip-forward-btn { order: 2; }
         #splitter { touch-action: none; }
         /* botões no canto direito: em coluna ao lado do vídeo; no modo perguntas, em linha sobre o painel da direita */
-        #chrome-right { flex-direction: column; align-items: flex-end; }
-        #chrome-right #theme-btn { order: 1; }
-        #chrome-right #mode-switch { order: 0; flex-direction: column; align-items: stretch; }
-        #chrome-right #mode-switch button { white-space: nowrap; text-align: center; }
-        body[data-mode="questions"] #chrome-right { flex-direction: row; align-items: center; }
-        body[data-mode="questions"] #chrome-right #theme-btn { order: 0; }
-        body[data-mode="questions"] #chrome-right #mode-switch { flex-direction: row; align-items: center; }
+        #chrome-right { flex-direction: column; align-items: stretch; gap: 2px; }
+        #mode-switch { flex-direction: column; }
+        #chrome-right .sep { display: block; height: 1px; margin: 2px 6px; }
+        #chrome-right .chrome-btn { width: 100%; }
+        body[data-mode="questions"] #chrome-right { flex-direction: row; align-items: center; gap: 2px; }
+        body[data-mode="questions"] #mode-switch { flex-direction: row; }
+        body[data-mode="questions"] #chrome-right .sep { width: 1px; height: 20px; margin: 0 4px; }
+        body[data-mode="questions"] #chrome-right .chrome-btn { width: auto; }
         @media (max-width: 899px) { main { padding-top: 2.75rem; } }
         /* trecho da transcrição abaixo do vídeo (modo perguntas) */
         #ctx-panel { display: none; flex-direction: column; min-height: 0; max-height: 40vh; }
@@ -112,6 +113,7 @@
         html.dark .hover\:bg-amber-200:hover { background-color: #5a4720; }
         html.dark .hover\:bg-rose-200:hover { background-color: #6e3336; }
         html.dark .hover\:bg-slate-50:hover { background-color: #201f24; }
+        html.dark .hover\:bg-slate-100:hover { background-color: #37363c; }
         html.dark .hover\:bg-slate-200:hover { background-color: #37363c; }
         html.dark .hover\:bg-slate-300:hover { background-color: #434247; }
         html.dark .hover\:bg-indigo-50:hover { background-color: #37353f; }
@@ -164,16 +166,18 @@
 
     <!-- Sem barra no topo: o crédito fica no canto esquerdo e os botões no canto direito, ao lado do vídeo -->
     <p id="chrome-left" class="fixed top-2 left-3 z-20 m-0 text-[11px] text-indigo-700 pointer-events-none">Criado por <span class="font-semibold">Ana Carolina Caumo</span></p>
-    <div id="chrome-right" class="fixed top-2 right-3 z-20 flex gap-2">
-        <div id="mode-switch" role="group" aria-label="Modo" class="flex items-center gap-1 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
-                <button id="mode-transcripts" type="button" aria-pressed="true" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Transcrições</button>
-                <button id="mode-video" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Só vídeo</button>
-                <button id="mode-questions" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Perguntas do avaliador</button>
-            </div>
-        <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
-                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-            </button>
+    <div id="chrome-right" class="fixed top-2 right-3 z-20 flex bg-white border border-slate-200 rounded-xl shadow-md p-1">
+        <div id="mode-switch" role="group" aria-label="Modo" class="flex gap-0.5">
+            <button id="mode-transcripts" type="button" aria-pressed="true" class="chrome-btn flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="14" y2="18"></line></svg><span>Transcrições</span></button>
+            <button id="mode-video" type="button" aria-pressed="false" class="chrome-btn flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg><span>Só vídeo</span></button>
+            <button id="mode-questions" type="button" aria-pressed="false" class="chrome-btn flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>Perguntas do avaliador</span></button>
+        </div>
+        <span class="sep bg-slate-200" aria-hidden="true"></span>
+        <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="chrome-btn flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 hover:bg-slate-100">
+            <svg class="icon-moon shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <svg class="icon-sun shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            <span id="theme-label">Modo escuro</span>
+        </button>
     </div>
 
     <main id="main" data-mode="transcripts" class="flex-1 flex flex-col overflow-hidden">
@@ -833,7 +837,9 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             getTime() { try { if (this.kind === 'mp4') return this.v.currentTime; if (this.kind === 'yt' && this.ready) return this.yt.getCurrentTime(); } catch (e) {} return null; },
             seek(t) { if (this.kind === 'mp4') this.v.currentTime = t; else this.yt.seekTo(t, true); },
             play() { if (this.kind === 'mp4') this.v.play().catch(() => {}); else this.yt.playVideo(); },
-            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); }
+            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); },
+            isPlaying() { try { if (this.kind === 'mp4') return !this.v.paused && !this.v.ended; if (this.kind === 'yt' && this.ready) return this.yt.getPlayerState() === 1; } catch (e) {} return false; },
+            getRate() { try { if (this.kind === 'mp4') return this.v.playbackRate || 1; if (this.kind === 'yt' && this.ready) return this.yt.getPlaybackRate() || 1; } catch (e) {} return 1; }
         };
         function videoMessage(html) { const el = $('video-msg'); el.innerHTML = html; show(el, true); }
         const YT_ERRORS = {
@@ -1041,43 +1047,48 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const target = c.scrollTop + (er.top - cr.top) - (c.clientHeight / 2 - er.height / 2);
             c.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'auto' });
         }
-        // Rolagem que acompanha a fala, como um teleprompter: dentro de cada turno, a "linha de leitura" anda do começo ao fim do
-        // texto na mesma proporção do tempo do turno. Assim, em turnos longos a página desliza aos poucos e, quando o próximo
-        // turno começa, ele já está chegando na tela, sem corte brusco. (É uma estimativa: supõe fala em ritmo constante.)
-        let scrollTarget = null, holdUntil = 0, lastVT = null;
+        // Rolagem que acompanha a fala, como um teleprompter: a "linha de leitura" anda ao longo de cada turno na mesma proporção
+        // do tempo do turno, e vai de um turno ao outro sem salto (do topo de um box ao topo do próximo). É uma estimativa: supõe
+        // fala em ritmo constante. Para ficar suave, a página usa um relógio próprio, que anda a cada quadro (60 vezes por segundo)
+        // e é corrigido aos poucos pelo tempo do player, que chega só a cada ~0,25 s e em degraus.
+        const clock = { base: 0, at: 0, playing: false, rate: 1, last: null };
+        const estTime = now => clock.base + (clock.playing ? (now - clock.at) / 1000 * clock.rate : 0);
+        let holdUntil = 0, wake = false, pos = null;
         function focusTarget(t) {
             const r = turnRange(t);
             if (!r) return null;
-            const first = $('turn-' + r[0]), last = $('turn-' + r[1]);
-            if (!first || !last || !first.offsetParent) return null;
-            const c = $('transcript-container'), cr = c.getBoundingClientRect();
-            const top = first.getBoundingClientRect().top - cr.top + c.scrollTop;
-            const bottom = last.getBoundingClientRect().bottom - cr.top + c.scrollTop;
+            const first = $('turn-' + r[0]);
+            if (!first || !first.offsetParent) return null;
+            const c = $('transcript-container'), top = first.offsetTop;
+            let nextTop = null;
+            for (let k = r[1] + 1; k < turns.length; k++) { const e = $('turn-' + k); if (e && e.offsetParent) { nextTop = e.offsetTop; break; } }
+            if (nextTop === null) { const last = $('turn-' + r[1]); nextTop = last.offsetTop + last.offsetHeight; }
             const start = starts[r[0]], end = turnEnd(r[1]);
             const p = Math.min(1, Math.max(0, (t - start) / Math.max(1, end - start)));
-            const textTop = top + 56, textBottom = bottom - 16;   // 56 px: cabeçalho do box (avatar, nome, horário)
-            const focus = textTop + p * Math.max(0, textBottom - textTop);
-            return Math.max(0, focus - c.clientHeight * 0.38);
+            return Math.max(0, top + 40 + p * (nextTop - top) - c.clientHeight * 0.38);
         }
         function followSnap() {   // vai direto para a posição atual (sem animação)
-            const vt = player.getTime();
+            const vt = clock.last === null ? player.getTime() : estTime(performance.now());
             const tg = vt == null ? null : focusTarget(vt - CONFIG.offsetSeconds);
-            if (tg != null) { $('transcript-container').scrollTop = tg; scrollTarget = null; }
+            if (tg != null) { $('transcript-container').scrollTop = tg; pos = null; }
             else if (activeLo >= 0) scrollToCard($('turn-' + activeLo), false);
         }
         (function () {
             const c = $('transcript-container');
             // se a pessoa rolar ou selecionar texto por conta própria, a rolagem automática espera um pouco
-            const hold = () => { holdUntil = performance.now() + 6000; scrollTarget = null; };
+            const hold = () => { holdUntil = performance.now() + 6000; pos = null; };
             ['wheel', 'touchstart', 'pointerdown'].forEach(ev => c.addEventListener(ev, hold, { passive: true }));
-            (function frame() {
+            (function frame(now) {
                 requestAnimationFrame(frame);
-                if (scrollTarget == null) return;
-                if (!follow || mode !== 'transcripts') { scrollTarget = null; return; }
-                const d = scrollTarget - c.scrollTop;
-                if (Math.abs(d) <= 1) { c.scrollTop = scrollTarget; scrollTarget = null; return; }
-                c.scrollTop += d * 0.18;
-            })();
+                if (!follow || mode !== 'transcripts' || now < holdUntil || !(clock.playing || wake)) return;
+                const tg = focusTarget(estTime(now) - CONFIG.offsetSeconds);
+                if (tg == null) return;
+                if (pos === null || Math.abs(c.scrollTop - pos) > 2) pos = c.scrollTop;   // outra coisa mexeu na rolagem: recomeça dali
+                const d = tg - pos;
+                pos += d * (Math.abs(d) > 600 ? 0.3 : 0.25);
+                c.scrollTop = pos;
+                if (!clock.playing && Math.abs(tg - pos) < 0.5) wake = false;
+            })(performance.now());
         })();
         function updateActive(t) {
             const r = turnRange(t);
@@ -1093,7 +1104,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const card = e.target.closest('.utterance');
             if (!card) return;
             if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando.' : 'O vídeo ainda não foi configurado.', true); return; }
-            holdUntil = 0; lastVT = null;
+            holdUntil = 0; wake = true;
             player.seek(turns[Number(card.dataset.i)].start + CONFIG.offsetSeconds + 0.01);
             player.play();
         });
@@ -1109,6 +1120,8 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         });
         const SW_ON = 'text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm';
         const SW_OFF = 'text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700';
+        const CB = 'chrome-btn flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors ';
+        const CB_ON = CB + 'bg-indigo-100 text-indigo-700', CB_OFF = CB + 'text-slate-600 hover:bg-slate-100';
         function setLang(l) {
             const c = $('transcript-container');
             c.classList.remove('lang-both', 'lang-en', 'lang-pt'); c.classList.add('lang-' + l);
@@ -1121,7 +1134,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             b.setAttribute('aria-pressed', String(follow));
             b.className = 'shrink-0 text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm ' + (follow ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50');
         }
-        $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow) { holdUntil = 0; const vt = player.getTime(); if (vt != null) scrollTarget = focusTarget(vt - CONFIG.offsetSeconds); } });
+        $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow) { holdUntil = 0; wake = true; pos = null; } });
 
         // ================= Perguntas =================
         let qIdx = 0, qFilter = 'all', qShuffled = false, resetArmed = false;
@@ -1314,7 +1327,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             $('main').dataset.mode = m; document.body.dataset.mode = m;
             show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions'); show($('panel'), m !== 'video');
             renderCtxPanel();
-            MODES.forEach(k => { const b = $('mode-' + k); b.className = k === m ? SW_ON : SW_OFF; b.setAttribute('aria-pressed', String(k === m)); });
+            MODES.forEach(k => { const b = $('mode-' + k); b.className = k === m ? CB_ON : CB_OFF; b.setAttribute('aria-pressed', String(k === m)); });
             if (m === 'transcripts') requestAnimationFrame(followSnap);
         }
         MODES.forEach(k => $('mode-' + k).addEventListener('click', () => setMode(k)));
@@ -1362,11 +1375,12 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         function tick() {
             const vt = player.getTime();
             if (vt == null) return;
-            const t = vt - CONFIG.offsetSeconds;
-            updateActive(t);
-            const moved = lastVT === null || Math.abs(vt - lastVT) > 0.001;   // só rola enquanto o vídeo anda (ou depois de um pulo)
-            lastVT = vt;
-            if (follow && mode === 'transcripts' && moved && performance.now() > holdUntil) { const tg = focusTarget(t); if (tg != null) scrollTarget = tg; }
+            const now = performance.now(), est = estTime(now), playing = player.isPlaying();
+            const jumped = clock.last === null || Math.abs(vt - est) > 0.8;   // primeira leitura ou pulo no vídeo
+            clock.base = jumped || !playing ? vt : est + (vt - est) * 0.3;     // tocando: corrige aos poucos, sem soluços
+            clock.at = now; clock.playing = playing; clock.rate = player.getRate(); clock.last = vt;
+            updateActive(vt - CONFIG.offsetSeconds);
+            if (jumped) { holdUntil = 0; wake = true; }
         }
         setInterval(tick, 200);
 
@@ -1380,6 +1394,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 const dark = root.classList.contains('dark');
                 const label = dark ? 'Mudar para o modo claro' : 'Mudar para o modo escuro';
                 btn.setAttribute('aria-pressed', String(dark)); btn.setAttribute('aria-label', label); btn.title = label;
+                $('theme-label').textContent = dark ? 'Modo claro' : 'Modo escuro';
             }
             btn.addEventListener('click', () => {
                 const dark = !root.classList.contains('dark');
