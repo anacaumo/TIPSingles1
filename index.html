@@ -42,7 +42,7 @@
 
         /* Duas colunas (inglês e português) que andam juntas: cada turno é uma linha com as duas */
         .content-pad { padding-left: max(1.5rem, calc((100% - 80rem) / 2)); padding-right: max(1.5rem, calc((100% - 80rem) / 2)); }
-        #video-box { height: min(var(--vh, clamp(170px, 38vh, 520px)), 65vh, calc((100vw - 10rem) * 9 / 16)); }
+        #video-box { height: min(var(--vh, clamp(170px, 42vh, 560px)), 70vh, calc((100vw - 10rem) * 9 / 16)); }
         /* -5s e +5s ficam dos lados do vídeo (economiza altura); no modo perguntas voltam para baixo */
         #video-wrapper { flex-direction: row; align-items: center; gap: .75rem; }
         #skip-row { display: contents; }
@@ -50,7 +50,7 @@
         #splitter { touch-action: none; }
         /* modo "só vídeo": sem transcrições nem perguntas, o vídeo ocupa a página */
         main[data-mode="video"] #video-section { flex: 1 1 auto; justify-content: center; }
-        main[data-mode="video"] #video-box { height: min(calc(100vh - 14rem), calc((100vw - 10rem) * 9 / 16)); }
+        main[data-mode="video"] #video-box { height: min(calc(100vh - 9rem), calc((100vw - 10rem) * 9 / 16)); }
         main[data-mode="video"] #splitter { display: none; }
         #splitter .grip { width: 3rem; height: 4px; border-radius: 9999px; background: #cbd5e1; transition: background .15s; }
         #splitter:hover .grip, #splitter:focus-visible .grip, #splitter.dragging .grip { background: #6366f1; }
@@ -148,20 +148,9 @@
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col font-sans">
 
-    <header class="bg-indigo-100 border-b border-indigo-200 px-6 py-3 flex justify-between items-center shadow-sm z-10 shrink-0">
-        <div class="min-w-0">
-            <h1 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                Treino de Tradução Juramentada
-            </h1>
-            <p class="text-[11px] text-indigo-700 mt-0.5 truncate">Entrevista Mishal Husain / Mark Carney: transcrições em inglês e português e perguntas do avaliador</p>
-        </div>
+    <header class="bg-indigo-100 border-b border-indigo-200 px-4 py-1.5 flex justify-between items-center shadow-sm z-10 shrink-0">
+        <p class="text-[11px] text-indigo-700 truncate min-w-0 m-0">Criado por <span class="font-semibold">Ana Carolina Caumo</span></p>
         <div class="flex items-center gap-3 shrink-0">
-            <div id="rate-switch" role="group" aria-label="Velocidade do vídeo" title="Velocidade do vídeo" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
-                <button type="button" data-rate="0.75" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">0,75×</button>
-                <button type="button" data-rate="1" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">1×</button>
-                <button type="button" data-rate="1.25" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">1,25×</button>
-            </div>
             <div id="fs-group" role="group" aria-label="Tamanho da letra" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
                 <button id="fs-down" type="button" aria-label="Diminuir a letra" title="Diminuir a letra" class="text-xs font-bold px-2.5 py-1.5 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A&minus;</button>
                 <button id="fs-up" type="button" aria-label="Aumentar a letra" title="Aumentar a letra" class="text-base leading-none font-bold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A+</button>
@@ -180,7 +169,7 @@
 
     <main id="main" data-mode="transcripts" class="flex-1 flex flex-col overflow-hidden">
         <!-- Em cima, no centro: o vídeo (carregado pela própria página, ninguém precisa enviar nada) -->
-        <section id="video-section" class="shrink-0 px-6 py-3 flex flex-col items-center gap-2 border-slate-200 bg-slate-100">
+        <section id="video-section" class="shrink-0 px-6 py-2 flex flex-col items-center gap-2 border-slate-200 bg-slate-100">
             <div id="video-wrapper" class="flex items-center shrink-0 max-w-full">
                 <div id="video-box" class="bg-black rounded-xl overflow-hidden shadow-lg aspect-video min-w-0 max-w-full flex items-center justify-center relative">
                     <div id="yt-host" class="w-full h-full"></div>
@@ -819,16 +808,12 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
 
         // ================= Player (YouTube ou .mp4) =================
         const player = {
-            kind: null, yt: null, ready: false, v: null, rate: 1,
+            kind: null, yt: null, ready: false, v: null,
             available() { return this.kind === 'mp4' || (this.kind === 'yt' && this.ready); },
             getTime() { try { if (this.kind === 'mp4') return this.v.currentTime; if (this.kind === 'yt' && this.ready) return this.yt.getCurrentTime(); } catch (e) {} return null; },
             seek(t) { if (this.kind === 'mp4') this.v.currentTime = t; else this.yt.seekTo(t, true); },
             play() { if (this.kind === 'mp4') this.v.play().catch(() => {}); else this.yt.playVideo(); },
-            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); },
-            setRate(r) {
-                this.rate = r;
-                try { if (this.kind === 'mp4') { this.v.defaultPlaybackRate = r; this.v.playbackRate = r; } else if (this.kind === 'yt' && this.ready) this.yt.setPlaybackRate(r); } catch (e) {}
-            }
+            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); }
         };
         function videoMessage(html) { const el = $('video-msg'); el.innerHTML = html; show(el, true); }
         const YT_ERRORS = {
@@ -846,8 +831,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 player.yt = new YT.Player('yt-host', {
                     videoId: CONFIG.youtubeId, width: '100%', height: '100%', playerVars: vars,
                     events: {
-                        onReady: () => { player.ready = true; if (player.rate !== 1) player.setRate(player.rate); },
-                        onPlaybackRateChange: e => { player.rate = e.data; paintRate(); },
+                        onReady: () => { player.ready = true; },
                         onError: e => videoMessage((YT_ERRORS[e.data] || 'Erro ao carregar o vídeo.') + `<br><br><a href="https://www.youtube.com/watch?v=${encodeURIComponent(CONFIG.youtubeId)}" target="_blank" rel="noopener">Abrir no YouTube</a>`)
                     }
                 });
@@ -862,7 +846,6 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 player.kind = 'mp4'; player.v = $('html5');
                 show($('yt-host'), false); show(player.v, true, 'block');
                 player.v.addEventListener('error', () => videoMessage('Não foi possível carregar o arquivo de vídeo. Confira o endereço em CONFIG.mp4Url.'));
-                player.v.addEventListener('ratechange', () => { player.rate = player.v.playbackRate; paintRate(); });
                 player.v.src = CONFIG.mp4Url;
             } else if (CONFIG.youtubeId) {
                 player.kind = 'yt'; loadYouTube();
@@ -891,18 +874,77 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             if (needle) for (let k = first; k < Math.min(turns.length, first + 6); k++) {
                 if (norm(turns[k].en).includes(needle)) return { from: k, idx: k };
                 // expressão cortada entre dois turnos (ex.: "wasn't having" / "it."): vale o turno em que ela termina
-                if (k + 1 < turns.length && norm(turns[k].en + ' ' + turns[k + 1].en).includes(needle)) return { from: k, idx: k + 1 };
+                if (k + 1 < turns.length && !norm(turns[k + 1].en).includes(needle) && norm(turns[k].en + ' ' + turns[k + 1].en).includes(needle)) return { from: k, idx: k + 1 };
             }
             return { from: first, idx: first };
         }
         function pauseTimeFor(t, expr) { return turnEnd(exprTurn(t, expr).idx) + CONFIG.extraPauseSeconds; }
-        // Texto em HTML com a expressão destacada (se aparecer no texto)
-        function hiHTML(text, expr) {
-            const pat = String(expr).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
-            let m = null;
-            try { m = pat ? new RegExp(pat, 'i').exec(text) : null; } catch (e) {}
-            if (!m) return esc(text);
-            return esc(text.slice(0, m.index)) + '<mark class="expr-mark">' + esc(m[0]) + '</mark>' + esc(text.slice(m.index + m[0].length));
+        // ---- destaque de expressões ----
+        const patOf = str => String(str).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
+        // Acha `str` em `text`. Se `ratio` vier (posição relativa 0..1), entre várias ocorrências escolhe a mais próxima dessa posição
+        function findMatch(text, str, ratio) {
+            let re; try { re = new RegExp(patOf(str), 'gi'); } catch (e) { return null; }
+            let best = null, m;
+            while ((m = re.exec(text)) !== null) {
+                if (m[0] === '') { re.lastIndex++; continue; }
+                if (ratio == null) return m;
+                const d = Math.abs(m.index / Math.max(1, text.length) - ratio);
+                if (!best || d < best.d) best = { m, d };
+            }
+            return best ? best.m : null;
+        }
+        const markHTML = (text, m) => esc(text.slice(0, m.index)) + '<mark class="expr-mark">' + esc(m[0]) + '</mark>' + esc(text.slice(m.index + m[0].length));
+        // Expressão cortada entre dois turnos: destaca o fim do primeiro e o começo do segundo (ou null se não achar)
+        function splitHL(a, b, expr) {
+            const words = String(expr).trim().split(/\s+/);
+            for (let k = words.length - 1; k >= 1; k--) {
+                let ma = null, mb = null;
+                try {
+                    ma = new RegExp(patOf(words.slice(0, k).join(' ')) + '(?=[\\s.,;:!?\u2026"\u201d\u2019\']*$)', 'i').exec(a);
+                    mb = new RegExp('^[\\s"\u201c\u2018]*(' + patOf(words.slice(k).join(' ')) + ')', 'i').exec(b);
+                } catch (e) {}
+                if (ma && mb) {
+                    const bi = mb.index + mb[0].length - mb[1].length;
+                    return [
+                        esc(a.slice(0, ma.index)) + '<mark class="expr-mark">' + esc(ma[0]) + '</mark>' + esc(a.slice(ma.index + ma[0].length)),
+                        esc(b.slice(0, bi)) + '<mark class="expr-mark">' + esc(mb[1]) + '</mark>' + esc(b.slice(bi + mb[1].length))
+                    ];
+                }
+            }
+            return null;
+        }
+        // Trechos entre aspas do gabarito, na ordem (o primeiro costuma ser a tradução escolhida)
+        function quotedCandidates(ans) {
+            const out = [], re = /[\u201c"]([^\u201d"]+)[\u201d"]/g; let m;
+            while ((m = re.exec(String(ans))) !== null) {
+                const c = m[1].trim().replace(/[.,;:!?\u2026]+$/, '');
+                if (c && !out.includes(c)) out.push(c);
+            }
+            return out;
+        }
+        // Devolve o HTML dos turnos de from..idx, em inglês e em português, com a expressão (EN) e a tradução do gabarito (PT) destacadas
+        function highlightRange(q, from, idx) {
+            const en = [], pt = [], n = idx - from + 1;
+            for (let k = from; k <= idx; k++) { en.push(turns[k].en); pt.push(turns[k].pt); }
+            let enHtml = en.map(esc), ratio = null;
+            if (n === 1) {
+                const m = findMatch(en[0], q.expr);
+                if (m) { enHtml = [markHTML(en[0], m)]; ratio = m.index / Math.max(1, en[0].length); }
+            } else if (n === 2) {
+                const sp = splitHL(en[0], en[1], q.expr);
+                if (sp) enHtml = sp;
+            }
+            let ptHtml = pt.map(esc);
+            for (const c of quotedCandidates(q.ans)) {
+                let done = false;
+                for (let i = 0; i < n && !done; i++) {
+                    const m = findMatch(pt[i], c, ratio);
+                    if (m) { ptHtml[i] = markHTML(pt[i], m); done = true; }
+                }
+                if (!done && n === 2) { const sp = splitHL(pt[0], pt[1], c); if (sp) { ptHtml = sp; done = true; } }
+                if (done) break;
+            }
+            return { en: enHtml, pt: ptHtml };
         }
 
         // ================= Pausa automática =================
@@ -1060,36 +1102,15 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const cls = on ? RATE_CLS[key].replace(/ hover:\S+/, '') : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50';
             return `<button type="button" data-score="${key}" aria-pressed="${on}" class="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm ${cls}">${on ? '&check; ' : ''}${label}</button>`;
         }
-        // Expressão cortada entre dois turnos: destaca o fim do primeiro e o começo do segundo
-        function splitHL(a, b, expr) {
-            const patOf = str => str.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
-            const words = String(expr).trim().split(/\s+/);
-            for (let k = words.length - 1; k >= 1; k--) {
-                let ma = null, mb = null;
-                try {
-                    ma = new RegExp(patOf(words.slice(0, k).join(' ')) + '(?=[\\s.,;:!?\u2026"\u201d\u2019\']*$)', 'i').exec(a);
-                    mb = new RegExp('^[\\s"\u201c\u2018]*(' + patOf(words.slice(k).join(' ')) + ')', 'i').exec(b);
-                } catch (e) {}
-                if (ma && mb) {
-                    const bi = mb.index + mb[0].length - mb[1].length;
-                    return [
-                        esc(a.slice(0, ma.index)) + '<mark class="expr-mark">' + esc(ma[0]) + '</mark>' + esc(a.slice(ma.index + ma[0].length)),
-                        esc(b.slice(0, bi)) + '<mark class="expr-mark">' + esc(mb[1]) + '</mark>' + esc(b.slice(bi + mb[1].length))
-                    ];
-                }
-            }
-            return [esc(a), esc(b)];
-        }
         function contextHTML(q) {
             const ex = exprTurn(q.t, q.expr);
+            const hl = highlightRange(q, ex.from, ex.idx);
             let rows = '';
-            const split = ex.from !== ex.idx ? splitHL(turns[ex.from].en, turns[ex.idx].en, q.expr) : null;
             for (let k = ex.from; k <= ex.idx; k++) {
                 const t = turns[k];
-                const enHtml = split ? split[k - ex.from] : hiHTML(t.en, q.expr);
-                rows += `<div class="cols mb-3">${turnBox(t, 'col-en', 'EN', enHtml)}${turnBox(t, 'col-pt', 'PT', esc(t.pt))}</div>`;
+                rows += `<div class="cols mb-3">${turnBox(t, 'col-en', 'EN', hl.en[k - ex.from])}${turnBox(t, 'col-pt', 'PT', hl.pt[k - ex.from])}</div>`;
             }
-            return `<div class="mt-4"><div class="${LABEL}">Trecho da transcrição (a expressão está destacada no inglês)</div>${rows}</div>`;
+            return `<div class="mt-4"><div class="${LABEL}">Trecho da transcrição (a expressão e a sua tradução estão destacadas)</div>${rows}</div>`;
         }
         function renderQuestion(keepScroll) {
             const body = $('q-body'), prevTop = body.scrollTop;
@@ -1190,12 +1211,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         }
         MODES.forEach(k => $('mode-' + k).addEventListener('click', () => setMode(k)));
 
-        // ================= Velocidade do vídeo e tamanho da letra =================
-        function paintRate() {
-            document.querySelectorAll('#rate-switch button').forEach(b => { b.className = Number(b.dataset.rate) === player.rate ? SW_ON.replace('px-3', 'px-2.5') : SW_OFF.replace('px-3', 'px-2.5'); });
-        }
-        $('rate-switch').addEventListener('click', e => { const b = e.target.closest('button[data-rate]'); if (b) { player.setRate(Number(b.dataset.rate)); paintRate(); } });
-        paintRate();
+        // ================= Tamanho da letra =================
         const FS = [0.85, 1, 1.15, 1.3, 1.5];   // limites: nenhum tamanho quebra o layout
         let fsI = 1;
         try { const sv = parseInt(localStorage.getItem('translationPracticeFont'), 10); if (sv >= 0 && sv < FS.length) fsI = sv; } catch (e) {}
@@ -1208,6 +1224,28 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         $('fs-down').addEventListener('click', () => { if (fsI > 0) { fsI--; paintFs(true); } });
         $('fs-up').addEventListener('click', () => { if (fsI < FS.length - 1) { fsI++; paintFs(true); } });
         paintFs(false);
+
+        // ================= Tamanho do vídeo (barra arrastável) =================
+        (function () {
+            const sp = $('splitter'), box = $('video-box'), KEY = 'translationPracticeVideoH';
+            const clampH = h => Math.max(120, Math.min(h, window.innerHeight * 0.7));
+            const apply = h => document.documentElement.style.setProperty('--vh', clampH(h) + 'px');
+            try { const saved = parseFloat(localStorage.getItem(KEY)); if (saved > 0) apply(saved); } catch (e) {}
+            const save = () => { try { localStorage.setItem(KEY, String(Math.round(box.getBoundingClientRect().height))); } catch (e) {} };
+            let startY = 0, startH = 0;
+            sp.addEventListener('pointerdown', e => {
+                startY = e.clientY; startH = box.getBoundingClientRect().height;
+                sp.setPointerCapture(e.pointerId); sp.classList.add('dragging'); e.preventDefault();
+            });
+            sp.addEventListener('pointermove', e => { if (sp.classList.contains('dragging')) apply(startH + (e.clientY - startY)); });
+            const end = () => { if (!sp.classList.contains('dragging')) return; sp.classList.remove('dragging'); save(); };
+            sp.addEventListener('pointerup', end); sp.addEventListener('pointercancel', end);
+            sp.addEventListener('dblclick', () => { document.documentElement.style.removeProperty('--vh'); try { localStorage.removeItem(KEY); } catch (e) {} });
+            sp.addEventListener('keydown', e => {
+                if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                e.preventDefault(); apply(box.getBoundingClientRect().height + (e.key === 'ArrowDown' ? 30 : -30)); save();
+            });
+        })();
 
         // ================= Vídeo: botões e o relógio que move tudo junto =================
         $('skip-back-btn').addEventListener('click', () => { const t = player.getTime(); if (t != null) player.seek(Math.max(0, t - 5)); });
