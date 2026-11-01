@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treino de Tradução Juramentada</title>
+    <!-- Tema: aplicado antes de desenhar a página, para não piscar. Uma escolha salva vale mais do que a configuração do sistema. -->
+    <script>
+        (function () {
+            var dark = false;
+            try { dark = !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+            try { var saved = localStorage.getItem('translationPracticeTheme'); if (saved) dark = saved === 'dark'; } catch (e) {}
+            if (dark) document.documentElement.classList.add('dark');
+        })();
+    </script>
+    <!-- Estilo: usa o tailwind.js da mesma pasta se existir (funciona offline); senão, busca na internet -->
+    <script src="tailwind.js"></script>
+    <script>if (typeof tailwind === 'undefined') { document.write('<script src="https://cdn.tailwindcss.com"><\/script>'); }</script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .utterance .box { transition: all 0.2s ease; }
+        .utterance.hidden { display: none; }
+        .utterance.active .box {
+            background-color: #eff6ff !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        /* Duas colunas (inglês e português) que andam juntas: cada turno é uma linha com as duas */
+        .content-pad { padding-left: max(1.5rem, calc((100% - 80rem) / 2)); padding-right: max(1.5rem, calc((100% - 80rem) / 2)); }
+        #video-box { height: clamp(150px, 30vh, 400px); }
+
+        /* Modo perguntas: o vídeo volta para a esquerda e a pergunta fica à direita */
+        @media (min-width: 900px) {
+            main[data-mode="questions"] { flex-direction: row; }
+            main[data-mode="questions"] #video-section { width: 44%; min-width: 380px; align-items: stretch; justify-content: flex-start; padding: 1.5rem; overflow-y: auto; border-bottom-width: 0; border-right-width: 1px; }
+            main[data-mode="questions"] #video-wrapper { width: 100%; }
+            main[data-mode="questions"] #video-box { height: auto; width: 100%; }
+        }
+        .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1rem; }
+        #transcript-container.lang-en .col-pt, #transcript-container.lang-pt .col-en { display: none; }
+        #transcript-container.lang-en .cols, #transcript-container.lang-pt .cols { grid-template-columns: minmax(0, 1fr); }
+        #transcript-container.lang-pt .col-pt { border-left: 0; padding-left: 0; }
+
+        #video-box iframe { width: 100%; height: 100%; display: block; }
+        .video-msg { color: #fff; background: rgba(0, 0, 0, .88); }
+        .video-msg a { color: #a5b4fc; text-decoration: underline; }
+
+        /* ================= Tema escuro (Material 3) — o mesmo do editor =================
+           Só vale com <html class="dark">; o tema claro não é afetado. */
+        html.dark { color-scheme: dark; }
+        html.dark body { background-color: #141318; color: #e3e2e8; }
+        html.dark input:not([type=checkbox]):not([type=radio]) { background-color: #201f24; color: #e3e2e8; }
+        html.dark ::placeholder { color: #b7b4c1; opacity: 1; }
+        html.dark ::selection { background: #3d3d8e; color: #e5deff; }
+        html.dark .bg-white { background-color: #2a292e; }
+        html.dark .bg-slate-50 { background-color: #141318; }
+        html.dark .bg-slate-50\/50 { background-color: #141318; }
+        html.dark .bg-slate-100 { background-color: #201f24; }
+        html.dark .bg-slate-200 { background-color: #353439; }
+        html.dark .bg-indigo-50 { background-color: #37353f; }
+        html.dark .bg-indigo-100 { background-color: #3d3d8e; }
+        html.dark .bg-indigo-600 { background-color: #c9bfff; }
+        html.dark .bg-emerald-100 { background-color: #015236; }
+        html.dark .bg-amber-50 { background-color: #3a3534; }
+        html.dark .hover\:bg-slate-50:hover { background-color: #201f24; }
+        html.dark .hover\:bg-slate-200:hover { background-color: #37363c; }
+        html.dark .hover\:bg-slate-300:hover { background-color: #434247; }
+        html.dark .hover\:bg-indigo-50:hover { background-color: #37353f; }
+        html.dark .hover\:bg-indigo-200:hover { background-color: #4a4a97; }
+        html.dark .hover\:bg-indigo-700:hover { background-color: #bbb3f4; }
+        html.dark .hover\:bg-emerald-200:hover { background-color: #0c5f41; }
+        html.dark .text-slate-800 { color: #e3e2e8; }
+        html.dark .text-slate-700 { color: #e3e2e8; }
+        html.dark .text-slate-600 { color: #c7c5d2; }
+        html.dark .text-slate-500 { color: #c7c5d2; }
+        html.dark .text-slate-400 { color: #b7b4c1; }
+        html.dark .text-white { color: #1f2774; }
+        html.dark .text-indigo-500 { color: #c9bfff; }
+        html.dark .text-indigo-600 { color: #c9bfff; }
+        html.dark .text-indigo-700 { color: #c9bfff; }
+        html.dark .text-indigo-800 { color: #e5deff; }
+        html.dark .text-indigo-900 { color: #e5deff; }
+        html.dark .text-emerald-800 { color: #88f8c5; }
+        html.dark .text-amber-800 { color: #ffddba; }
+        html.dark .hover\:text-slate-700:hover { color: #e3e2e8; }
+        html.dark .hover\:text-indigo-900:hover { color: #e5deff; }
+        html.dark .border-slate-200 { border-color: #474550; }
+        html.dark .border-slate-300 { border-color: #928f9b; }
+        html.dark .border-indigo-200 { border-color: #3d3d8e; }
+        html.dark .border-indigo-300 { border-color: #8f85e1; }
+        html.dark .border-amber-300 { border-color: #bc8642; }
+        html.dark .focus-within\:border-indigo-500:focus-within { border-color: #c9bfff; }
+        html.dark .focus-within\:ring-indigo-500:focus-within { --tw-ring-color: #c9bfff; }
+        html.dark .border-black\/5 { border-color: rgb(255 255 255 / .14); }
+        html.dark .placeholder\:text-slate-400::placeholder { color: #b7b4c1; }
+        html.dark header.bg-indigo-100 { background-color: #34323f; }
+        html.dark .custom-scrollbar::-webkit-scrollbar-track { background: #1c1b20; }
+        html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #5f5d68; }
+        html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #787581; }
+        html.dark .utterance.active .box {
+            background-color: #43414f !important; border-color: #c9bfff !important; box-shadow: 0 4px 10px -2px rgba(0, 0, 0, .55) !important;
+        }
+        html.dark .avatar-dyn { background-color: var(--av-bg-d) !important; color: var(--av-fg-d) !important; }
+        html.dark #custom-alert { background-color: #e3e2e8; color: #313035; }
+        html.dark #custom-alert.alert-error { background-color: #822624; color: #fedad6; }
+        html.dark #custom-alert button { color: inherit; }
+        html.dark #custom-alert button:hover { background-color: rgb(255 255 255 / .12); }
+        html.dark #custom-alert:not(.alert-error) button:hover { background-color: rgb(0 0 0 / .12); }
+        #theme-btn .icon-sun { display: none; }
+        html.dark #theme-btn .icon-sun { display: inline; }
+        html.dark #theme-btn .icon-moon { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col font-sans">
+
+    <header class="bg-indigo-100 border-b border-indigo-200 px-6 py-3 flex justify-between items-center shadow-sm z-10 shrink-0">
+        <div>
+            <h1 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                Treino de Tradução Juramentada
+            </h1>
+            <p class="text-[11px] text-indigo-700 mt-0.5">Entrevista Mishal Husain / Mark Carney: transcrições em inglês e português e perguntas do avaliador</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            </button>
+            <div id="mode-switch" role="group" aria-label="Modo" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
+                <button id="mode-transcripts" type="button" aria-pressed="true" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Transcrições</button>
+                <button id="mode-questions" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Perguntas do avaliador</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main" data-mode="transcripts" class="flex-1 flex flex-col overflow-hidden">
+        <!-- Em cima, no centro: o vídeo (carregado pela própria página, ninguém precisa enviar nada) -->
+        <section id="video-section" class="shrink-0 px-6 py-3 flex flex-col items-center gap-2 border-b border-slate-200 bg-slate-100">
+            <div id="video-wrapper" class="flex flex-col items-center gap-2 shrink-0 max-w-full">
+                <div id="video-box" class="bg-black rounded-xl overflow-hidden shadow-lg aspect-video max-w-full flex items-center justify-center relative">
+                    <div id="yt-host" class="w-full h-full"></div>
+                    <video id="html5" class="hidden w-full h-full object-contain" controls playsinline></video>
+                    <div id="video-msg" class="video-msg hidden absolute inset-0 items-center justify-center text-center text-sm leading-relaxed p-6"></div>
+                </div>
+                <div class="flex justify-center gap-3">
+                    <button id="skip-back-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">-5s</button>
+                    <button id="skip-forward-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">+5s</button>
+                </div>
+            </div>
+            <div id="ap-card" class="hidden w-full max-w-xl items-center justify-between gap-3 bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded-lg px-3 py-2">
+                <span id="ap-text"></span>
+                <button id="ap-cancel" type="button" class="shrink-0 font-semibold underline underline-offset-2">Cancelar pausa</button>
+            </div>
+        </section>
+
+        <!-- Embaixo, metade e metade: transcrições (EN | PT) ou perguntas -->
+        <section class="flex-1 min-h-0 flex flex-col bg-white overflow-hidden relative">
+
+            <div id="view-transcripts" class="flex flex-1 min-h-0 flex-col">
+                <div class="content-pad bg-white border-b border-slate-200 py-3 shadow-sm z-10 flex gap-3 items-center justify-between shrink-0">
+                    <div id="search-box" class="flex items-center gap-2 flex-1 min-w-0 bg-slate-100 rounded-lg px-3 py-1.5 border border-slate-200 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="search-input" placeholder="Buscar nas transcrições (qualquer palavra, em inglês ou português)" class="w-full text-sm border-0 focus:ring-0 outline-none bg-transparent placeholder:text-slate-400">
+                    </div>
+                    <div id="lang-switch" role="group" aria-label="Idiomas" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm shrink-0">
+                        <button type="button" data-lang="both" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">EN + PT</button>
+                        <button type="button" data-lang="en" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">EN</button>
+                        <button type="button" data-lang="pt" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">PT</button>
+                    </div>
+                    <button id="follow-btn" type="button" aria-pressed="true" title="Rolar as transcrições junto com o vídeo" class="shrink-0 text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm bg-indigo-100 text-indigo-700 border-indigo-300">Acompanhar vídeo</button>
+                    <span id="utterance-count" class="shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">0 turnos</span>
+                </div>
+                <div id="transcript-container" class="lang-both content-pad flex-1 overflow-y-auto pb-2 custom-scrollbar bg-slate-50/50 pb-32 relative"></div>
+            </div>
+
+            <div id="view-questions" class="hidden flex-1 min-h-0 flex-col">
+                <div class="content-pad bg-white border-b border-slate-200 py-3 shadow-sm z-10 shrink-0">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Perguntas do avaliador</h2>
+                        <span id="q-progress" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">Pergunta 0 de 0</span>
+                    </div>
+                    <div id="q-nav" class="flex flex-wrap gap-1.5"></div>
+                    <p id="q-help" class="text-[11px] text-slate-500 mt-3">Clique no horário para ouvir o trecho no vídeo: ele pausa sozinho 5 segundos depois que o turno de fala termina. Verdes: perguntas cujo gabarito você já abriu.</p>
+                </div>
+                <div id="q-body" class="content-pad flex-1 overflow-y-auto py-4 custom-scrollbar bg-slate-50/50"></div>
+                <div class="content-pad border-t border-slate-200 bg-white py-3 flex justify-between items-center shrink-0">
+                    <button id="q-prev" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">&larr; Anterior</button>
+                    <button id="q-next" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">Próxima &rarr;</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== DADOS EMBUTIDOS =====
+         As duas transcrições (XML) e as perguntas (TXT) ficam aqui dentro: a página funciona sozinha, sem enviar arquivo nenhum.
+         Para corrigir uma pergunta ou uma frase, basta editar o texto dentro do bloco correspondente. -->
+    <script id="data-en" type="text/plain"><doc id="TIMESTAMPS" file="TIMESTAMPS.TXT">
+  <u who="mishal husain" role="press" video_time="00:00:00">Hello and welcome. I'm Mishal Husain, and this show will be a place where every weekend you can hear one essential conversation that provides insight into the ideas and people shaping our world. And my first is with someone who's leading a country right at the forefront of the disrupted global order. It's Mark Carney, the Prime Minister of Canada. His country is on the frontline of global trade turbulence. It's taking heat from its southern neighbor, a country to which it is highly connected. Canada and the United States, after all, share the world's longest border. And yet today, Donald Trump still believes it should be the 51st state. As a result, Canada is in the midst of a scramble to make its economy more self-sufficient. That's what Mark Carney stepped into 7 months ago when he was entirely new to politics. He's a trained economist, a former central banker, a climate champion who's now in charge of navigating a fossil fuel economy through these uncertain times. It was a weekend when we spoke. He came by Bloomberg's London studios, a place which he's familiar with as he's chaired the board here in the past. He was in London to watch Canada's women play England in the Rugby World Cup final. Unfortunately for Canada, they lost. But we talked about Donald Trump, of course, about big foreign policy moves surrounding Ukraine and Gaza, and about Carney's philosophy of leadership. To get a sense of what motivates him, I started by asking him to take me back to his early years, his family, and the place where he was born, Fort Smith, in Canada's Northwest Territories.</u>
+  <u who="mark carney" role="politician" video_time="00:01:53">The north. I wouldn't technically all the way to the Arctic, but close enough. They went up to the north as, yeah, as adventure pioneering. They were young teachers and going to what seemed as the frontier. Of course, there were people there already. So there was that element. Strong sense in my family of public service. My dad was a civil servant. As I say, my parents are educators. A sense of that is the higher calling. So I've always had that element, even though I've had a private sector career. I was fortunate to be the central bank governor, as you say, in 2 G7 countries, and at a time when, because there were major financial problems, including here in the City of London, that that job was broader than usual, major financial reforms going on, having to be negotiated around the world. So I've, in that regard, I've been thinking about what next in public service, yes. Candidly, the prospect of becoming an elected politician in Canada, let alone Prime Minister, I felt like was receding. And then over the course of the year and the run-up to when I stood for election, I became more and more concerned, as some others did, about the potential direction of our country and felt that given my background, I would have a chance to help change it.</u>
+  <u who="mishal husain" role="press" video_time="00:03:16">Did you get elected because of President Trump, really?</u>
+  <u who="mark carney" role="politician" video_time="00:03:18">I got elected— well, you'd have to ask the voters of Canada. I think—</u>
+  <u who="mishal husain" role="press" video_time="00:03:24">Well, you stood because of President Trump, didn't you? You made the choice just before— you announced it just before the inauguration.</u>
+  <u who="mark carney" role="politician" video_time="00:03:29">I did not stand because of President Trump, no. I stood because I believed that the person who was likely to become Prime Minister, certainly in all the polling, was not the right person for Canada, that it would have been a divisive government in that case and would have taken our country back as opposed to forward. It turned out to be the case that very quickly once I was in the leadership campaign before I became leader of the Liberal Party and then before the general election campaign, it turned out that President Trump's actions in the trade war, as it's known, really intensified and then I became more relevant. So certainly, yes, it helped that people made a judgment that I was best placed to deal with it. So you went into a leadership</u>
+  <u who="mishal husain" role="press" video_time="00:04:11">campaign You went into it with your eyes open, but what has surprised you in these 6 to 7 months?</u>
+  <u who="mark carney" role="politician" video_time="00:04:19">What has surprised me the most? I guess a couple of things. One is how relentless it is. So I took a decision in early January to stand for the leadership, and from that point on, it has been nonstop, as close to 24/7 as possible. I conceptually knew that. I'd had high-pressure jobs before, but it's that much more so. So that's the first thing. I think that the importance of and the fluidity of international relations— I knew international relations are important, but the fluidity of those relations and the importance of those relationships, those personal relationships with world leaders, some of which I had in advance, but— others I've had to develop. That has surprised me, the degree to which that is important.</u>
+  <u who="mishal husain" role="press" video_time="00:05:12">What do you miss about your old life? I imagine your family probably miss your old</u>
+  <u who="mark carney" role="politician" video_time="00:05:16">life. Yes, I'm sure they do. I miss— what do I miss about it? I miss having any privacy, basically.</u>
+  <u who="mishal husain" role="press" video_time="00:05:27">I was thinking about something you said in 2020 about how it is easier to be a central banker in a democracy than a politician. But it feels like that's not even the half of it, right? You have become Prime Minister at a time when global trade is disrupted as never before. Global alliances are under pressure as never before. How has it been?</u>
+  <u who="mark carney" role="politician" video_time="00:05:50">I stand by my earlier statement that it was easier to be a central banker. It's— well, part of the reason I am in this position is because of what you just described. It's part of the reason why I put myself forward. Possibly one of the reasons why I was elected. In some respects, I'm going to say an odd thing. In some respects, it's easier when the problems are very clearly out in front of everybody. I think all Canadians understand that our relationship with the United States has changed fundamentally, that the world is a more Dangerous and divided place, and then the question becomes: What do we do about it? And sometimes, just on reflection, if you look back when times were good, quote unquote, but problems were building up, that's when it's more difficult to take the big decisions that are necessary.</u>
+  <u who="mishal husain" role="press" video_time="00:06:47">Whereas here, you know the score.</u>
+  <u who="mark carney" role="politician" video_time="00:06:48">Here, you know that we have to act. It's important to be as open and as possible with people in terms of the assessment of the scale of what needs to be done, and then and then to be decisive.</u>
+  <u who="mishal husain" role="press" video_time="00:07:00">I do want to. explore how much harder your task is as Prime Minister in some of your domestic priorities and certainly your foreign policy priorities because the United States is not the partner that it has been before and because its priorities have shifted. Of course, you've got specific bilateral issues with the United States, primarily over trade, and the Canadian economy has been hit hard by what President Trump has done, particularly on steel and, and and the auto sector and aluminium. What is your strategy for when the US-Mexico-Canada trade deal is reviewed next summer? What are you— are you hoping the US economy by that stage is in a position where President Trump takes a different view on tariffs?</u>
+  <u who="mark carney" role="politician" video_time="00:07:45">We want the best for the US economy, just as we want— well, slightly stronger, we want the best for the Canadian economy. But so no, our strategy is not to expect some weakness in the US economy that is going to change US negotiating position. Our strategy, part of our strategy has been, well, has been to pursue the best deal for Canada. We have the best trade deal at the moment. 85% of our trade with the United States is tariff-free. We have the lowest average tariff against— of any country with the US. It's 5.5%. So we're in a good position now with 2 important caveats. One is your question, what's going to happen with the renegotiation of what they call USMCA? And secondly, some key sectors, steel, autos, aluminium, forest products being the main ones. We'll make it increasingly clear that in certain sectors, particularly, the integration of the Canadian and US and Mexican economies is essential to US competitiveness. In steel, in autos, as 2 examples, that linkages are so tight, they're so tight such that the Canadian content— or sorry, the US content in Canadian finished automobiles is higher than the average US content in American automobiles. So we make America stronger in these sectors, and our strategy is to make sure that that is as well understood as possible.</u>
+  <u who="mishal husain" role="press" video_time="00:09:14">Okay, so the prosperity of both countries is at stake. Your language, though, has changed on President Trump since you Do you remember when you talked about him as a bully that needed to be stood up to in February when you were campaigning? We're going to stand up to a bully. We're not going to back down. And yet now you're much more likely to, to talk in more conciliatory terms. I mean, obviously one is campaigning and one is governing, but perhaps people who wanted you to do the standing up to the bully might feel that you haven't done that as much as you suggested when you were campaigning.</u>
+  <u who="mark carney" role="politician" video_time="00:09:48">Well, Let's be clear of the actual situation. We're one of— there are 2 countries effectively that put retaliatory tariffs on the United States. 2 countries in the world. We put them on, we've kept them on. We kept them on up to a point where they ceased to be effective. We got to a point when we took our retaliatory tariffs off, We had 85% of our trade tariff-free. When we put them on, given the steps that President Trump had taken, it was less than— it was a third of our trade was tariff-free. So, you know, strikes me that that's pretty effective.</u>
+  <u who="mishal husain" role="press" video_time="00:10:29">Number one— But he has shown his power, hasn't he, over you? Like, for example, your digital services tax. You announced it, he hated it. You had to back down on that.</u>
+  <u who="mark carney" role="politician" video_time="00:10:36">The digital service tax was announced multiple years before. It was just effectively coming in It was coming into effect. Look, the United States—</u>
+  <u who="mishal husain" role="press" video_time="00:10:44">And it couldn't because President Trump wasn't having</u>
+  <u who="mark carney" role="politician" video_time="00:10:46">it. We made a decision in the context. And let's— what happened after we took that digital service tax off? Within weeks, the president confirmed in writing, formally confirmed in an executive order, that tariff-free status for the vast majority of our trade.</u>
+  <u who="mishal husain" role="press" video_time="00:11:05">So there was something broader at stake.</u>
+  <u who="mark carney" role="politician" video_time="00:11:06">There's something broader. I get that.</u>
+  <u who="mishal husain" role="press" video_time="00:11:07">I get that. But I just wonder how— how you reconcile yourself to that, because it is different from the tone you struck before.</u>
+  <u who="mark carney" role="politician" video_time="00:11:14">Well, I reconcile— my responsibility is to get the best possible deal for Canada. We have the best deal in the world at this point. Now, that next issue is where is the USMCA negotiation going to land? Yeah, the trade agreement, the broader trade agreement going to land. And that's being prepared for that and working with the US on that. But let's be absolutely clear. The United States does have tremendous leverage in the near term over Canada, over the European Union, over the United Kingdom, because our economies became linked on the basis of certain assumptions. Those assumptions have now changed. And so part of this is stabilizing that relationship. It's the US right to have different priorities. We respect that they've made that choice. We look to stabilize the trading relationship. Okay, what are the new terms under the new objectives of the United States that are in the best interests of Canada? And then the big thing that we do, and a big part of, I think, why I was elected, was what else are we going to do? And one of the core points that we've made from the start is that we can give ourselves far more than the United States can take away. So we have agency. We can have one Canadian economy. We've taken major moves towards that one Canadian economy.</u>
+  <u who="mishal husain" role="press" video_time="00:12:39">It takes time.</u>
+  <u who="mark carney" role="politician" video_time="00:12:40">It takes time. It takes time, but it's worth it because we never want to be in this position again. We never want to be in this position again. And so that's building at home and it's diversifying abroad. We're having this interview in London. Part of the reason I'm in London is our deepening our trade relationship with the UK.</u>
+  <u who="mishal husain" role="press" video_time="00:12:57">With the United States. Exactly. Because 75% of your trade is with the United States. And that now has problems.</u>
+  <u who="mark carney" role="politician" video_time="00:13:03">And that will change.</u>
+  <u who="mishal husain" role="press" video_time="00:13:04">Okay. Have you learned anything from President Trump?</u>
+  <u who="mark carney" role="politician" video_time="00:13:08">Have I learned? I've learned lots of things from President Trump. You always learn things from people. I've learned that the value— I don't fully subscribe to this, but I see the effectiveness— the value of the term they would use is flooding the zone, of doing multiple things at the same time and the effectiveness that can have. I think that he has a very effective way in his own almost unique manner of framing issues and of dominating the agenda, if I can put that way as well.</u>
+  <u who="mishal husain" role="press" video_time="00:13:47">I even wondered about the way that you, you know, when you cancelled the carbon tax, you signed it on camera with a flourish. It was like executive order style. Have you learned an element of performance, like you have to be seen to be doing the job in a certain way? 'Cause it didn't feel very Canadian to do that, the signing on camera with the flourish.</u>
+  <u who="mark carney" role="politician" video_time="00:14:06">I think that— I don't know that that— it's interesting. I wouldn't have ascribed it to him per se. I just think that in a time when there is a lot of pressure, people are under a lot of pressure, there's a lot of uncertainty, the value of being very clear— so I'll take the example you used. That was the first day that I became prime minister. The first thing we did was to cancel that carbon tax. The next thing I did was to come to Europe, come to the UK, and to the Canadian Arctic, the three founding peoples of Canada—the French, the British, and the Indigenous Canadians—and to underscore our sovereignty, our history, but also to set up. trade agreements with the first 2 and a major intention to invest in our Arctic in defence and security. And so both of those things had substance. We cancelled the carbon tax. Those trips had substance because they were setting up trade agreements and security. But they also had, yes, symbolism, history, sovereignty, action. And when you're in— sorry, Mishal But when you're in a crisis particularly, in this case, a trade crisis, an economic crisis, a crisis of sovereignty, given some of the points that President Trump's saying about the 51st state. When you're in a crisis, you need to not just act decisively, but be seen to act decisively. And that, that's what we were doing.</u>
+  <u who="mishal husain" role="press" video_time="00:15:35">Can we explore that first through Ukraine? You are part of the Coalition of the Willing. You have a big Ukrainian-Canadian community. So Ukraine is important to the country as a whole, as well as I'm sure to you personally. President Trump is now talking about Ukraine winning, but when he does so, he emphasizes that Ukraine, he thinks, is going to do that with Europe's help. To what extent can Ukraine win without the US being fully front and center and offering the security backstops for the future?</u>
+  <u who="mark carney" role="politician" video_time="00:16:04">Okay, so there's a lot in that question, and I think it's important to distinguish the components. Ukraine with Europe's help, with Canada's help, and Canada is the largest per capita contributor to Ukraine. In dollar terms, we're contributing militarily and on a humanitarian basis as well. And we've been there from the start, and the start was 2014. The start was not 3 years ago. The start was 2014 with the illegal invasion annexation of Crimea attempted annexation, I guess. The U.S. is essential for a few things. With respect to Ukraine. It is essential for certain military equipment, the provision of that military equipment. We are happy to, or we understand the need to buy that equipment on behalf of Ukraine or to help Ukraine finance that equipment in many cases. So it doesn't have to be directly supplied by the United States. Obviously, it would be easier if the US were doing more direct provision, but that's not an insuperable issue. What is essential is this other part of your question is when there is an end of hostilities, some form of ceasefire, peace, frozen conflict, however it ends up being, the coalition, the first line of defence will be the Ukrainian army reinforced. The Coalition of the Willing, of which Canada is a member, UK, others, France, will provide important security guarantees. But the ultimate backstop does need to have some form of backstop, in our judgment and judgment of many others, of the United States. So the United States</u>
+  <u who="mishal husain" role="press" video_time="00:17:43">is— Which is— there's been no commitment.</u>
+  <u who="mark carney" role="politician" video_time="00:17:45">There has been.</u>
+  <u who="mishal husain" role="press" video_time="00:17:46">Which is why I asked you, how far can Ukraine get?</u>
+  <u who="mark carney" role="politician" video_time="00:17:48">There has been. Well, there's winning. There's winning. We can debate how that's defined, but winning militarily on the battlefield, getting to a position where there is a peace accord, a ceasefire, a frozen conflict, some understanding. They can get to that position with the support of Europe, the support of Canada, the support of Australia, the support of a few others, and with the US more in a secondary role. Having a durable peace, a durable end of hostility will require US back— like, it will require— The form that that could take is under active discussion at the military level, at the national security level. We are part of those discussions. It is right that nothing has been concretely agreed and spelled out. But I would say the level of engagement is encouraging.</u>
+  <u who="mishal husain" role="press" video_time="00:18:46">With the US?</u>
+  <u who="mark carney" role="politician" video_time="00:18:47">With the US, yes.</u>
+  <u who="mishal husain" role="press" video_time="00:18:48">So you're hoping you get there. The problem is that right now it does seem that Russia is emboldened. Drones in NATO airspace, jets in NATO airspace, as happened over Estonia?</u>
+  <u who="mark carney" role="politician" video_time="00:18:59">I would rephrase. Russia's under pressure. Russia's under pressure. They're trying what they can to shift, but they're under economic pressure. Their military situation, they were making some progress over the course of the summer. That progress has stopped. Some of it's begun to be reversed.</u>
+  <u who="mishal husain" role="press" video_time="00:19:19">But it's unnerving for a country like Estonia to have Russian jets in its airspace.</u>
+  <u who="mark carney" role="politician" video_time="00:19:24">Canada has frontline troops in Latvia.</u>
+  <u who="mishal husain" role="press" video_time="00:19:27">All right, but here's a very concrete thing. If that happens again, do you support the idea of a NATO country shooting down that Russian jet?</u>
+  <u who="mark carney" role="politician" video_time="00:19:37">The direct— all options are on the table without question. There are ongoing consultations within NATO. NATO countries defend themselves and certainly we will do what's necessary in order to protect those countries.</u>
+  <u who="mishal husain" role="press" video_time="00:19:55">Are you warning Russia that it is possible that a NATO country would shoot down one of their planes?</u>
+  <u who="mark carney" role="politician" video_time="00:20:01">Of course, as indirectly as— if I may, so that, for example, the Polish government has made those warnings directly in public.</u>
+  <u who="mishal husain" role="press" video_time="00:20:07">There is a precedent because Turkey did it to a Russian plane 10 years ago.</u>
+  <u who="mark carney" role="politician" video_time="00:20:11">Yeah.</u>
+  <u who="mishal husain" role="press" video_time="00:20:11">Is that the kind of message that you think it might take at a moment like this to show Russia that NATO is serious? Because President Trump isn't really showing Russia, but America is serious about Ukraine?</u>
+  <u who="mark carney" role="politician" video_time="00:20:23">I think President Trump has been very important in this process. He has given peace a chance, so to speak, with Russia. He has been, you know, at lines of communication with Vladimir Putin, with his special envoy Steve Witkoff. There's been direct conversations, there's been opportunities for Putin to take off-ramps. Putin has not taken any of those off-ramps. The president speaks for himself, but I think his patience is being exhausted. His line is hardening. The likelihood of further economic sanctions against Russia is increasing, and the severity of those next phase of sanctions could be a different order of magnitude. than previous rounds of sanctions. All of that is pointing in one direction. And I would underscore Russia has been moving at literally a snail's pace in terms of acquisition of territory, temporary acquisition of territory in Ukraine over the course of the last 3 years. And they're not going to win. They're not going to win this war. And it's a question of They're realizing that. And I personally think that the actions of Vladimir Putin over the course of the last few months, spurning the opportunity that President Trump has given him on multiple occasions, these drone incursions, if they are intentional, as they increasingly look to be, I think that is—</u>
+  <u who="mishal husain" role="press" video_time="00:21:59">But do you think he's making the calculation that America doesn't— there are no consequences for spurning?</u>
+  <u who="mark carney" role="politician" video_time="00:22:04">President Putin has done nothing but miscalculate in this war. He made the calculation that NATO would become divided. NATO has solidified. You just have to look to the June commitments. You have to look how we're acting. He made the calculation that Ukraine would capitulate in a matter of days. He made the calculation that President Zelensky would flee. He made the calculation there would be an uprising in favor. He has miscalculated consistently in this conflict.</u>
+  <u who="mishal husain" role="press" video_time="00:22:31">Another one of your foreign policy priorities has been the recognition, recognition of a Palestinian state. on which the US fundamentally disagrees. What is your next step on that issue?</u>
+  <u who="mark carney" role="politician" video_time="00:22:43">Yeah, so the— I would say the foreign policy priority was— the recognition, not the end. The end is a free and viable Palestinian state living side by side in peace and security with the State of Israel. That's the end goal. What we saw, just to be clear about why we did what we did, was that the actions of the current government, the Netanyahu government, were explicitly designed to end any possibility of a state of Palestine in violation of the UN Charter and going against Canadian government policy of whatever political stripe since 1947. We did this because the prospect was receding as opposed to viewing it as any sort of panacea, game changer fundamentally immediately leading to the outcome that we and others want. Yes, the US disagrees with the decision that we took, that Spain took, that France took, the United Kingdom took, 150 other countries in the UN have taken, but they— our common objective is the same.</u>
+  <u who="mishal husain" role="press" video_time="00:23:52">Yeah, so the end— for the end goal, the actual establishment of a Palestinian state living side by side with a secure Israel, to get that you're going to have to keep up the pressure on the Israeli government. Justin Trudeau said that Canada would honour the International Criminal Court arrest warrants, i.e., Benjamin Netanyahu would be arrested if he came to Canada. Does that stand under your leadership?</u>
+  <u who="mark carney" role="politician" video_time="00:24:14">Yes.</u>
+  <u who="mishal husain" role="press" video_time="00:24:15">You'd be prepared to do that?</u>
+  <u who="mark carney" role="politician" video_time="00:24:17">Yes.</u>
+  <u who="mishal husain" role="press" video_time="00:24:18">Are we also in a climate crisis?</u>
+  <u who="mark carney" role="politician" video_time="00:24:19">We are in a climate crisis, yeah.</u>
+  <u who="mishal husain" role="press" video_time="00:24:20">Okay. That's— the last time we spoke was at the Glasgow Climate Conference. Grab your headphones because I want to play you something that you said around that time when you were the UN Special Envoy for Climate Action and Finance. Here's what you said.</u>
+  <u who="mark carney" role="politician" video_time="00:24:35">Human frailties create a tragedy of the horizon. That means the catastrophic impacts of climate change will fall largely on future generations. The current generation, with our horizons fixated on the current news, business, and political cycles, has few direct incentives to solve the issue, even though the sooner we act, the less costly it will be.</u>
+  <u who="mishal husain" role="press" video_time="00:24:59">You are really well known for these words, this phrase, the tragedy of the horizon. It's all about how you need to think long-term rather than in terms of a short-term horizon. And yet in office, you scrapped the consumer carbon tax. You paused the mandate that was pushing carmakers to sell more and more electric vehicles. And there are now reports that you are about to drop the cap on emissions from the oil and gas sector. What happened to you?</u>
+  <u who="mark carney" role="politician" video_time="00:25:28">I'm the same me. I'm focused on the same issues. And the question is, how do you make progress towards those issues? And particularly, how do you make progress in a way that is most effective? How do you make progress most effectively? So I'll break those issues down. The consumer carbon tax was at best going to be responsible for high single-digit proportion of emissions reductions over the course of the next 25 years. So it was not— it was something, but it was far from the most important measure that was in place. It was extremely politically divisive, and it would have contributed to a government in place that would have canceled all climate policies in effect. First point. That's the design of that carbon tax, that aspect of the carbon tax relative to—</u>
+  <u who="mishal husain" role="press" video_time="00:26:28">Yeah, it wasn't perfect.</u>
+  <u who="mark carney" role="politician" video_time="00:26:29">It wasn't perfect, but it had an effect. So the question is, and the question is how do you use scarce government capital, government dollars, taxpayers' dollars, and political capital in order to have the maximum effect? And so the maximum effect, so let me go more directly. to what we are doing. So one of the biggest— 20% of the emissions in Canada, thereabouts, comes from the building sector, from houses and commercial buildings. We've done very little in terms of reducing those emissions. We are now embarking on one of the biggest home building measures in our history, which is more than 20% lower embedded carbon in the production of these homes. more than 20% lower carbon footprint in the running of these homes. So that in itself is a housing strategy, it's an economic strategy, but it's a climate strategy at the same time.</u>
+  <u who="mishal husain" role="press" video_time="00:27:24">And yet, reading your book, which is all about values rather than market value, and reading the way that you emphasize that these are urgent issues, that everything everything you do ought to take you towards a step further towards the common good, which is keeping global temperatures as close to 1.5 degrees as you can. You're the only G7 leader who has been a UN envoy on climate action.</u>
+  <u who="mark carney" role="politician" video_time="00:27:52">Yes, that's true.</u>
+  <u who="mishal husain" role="press" video_time="00:27:53">And the world is crying out for leadership on this, right? President Trump is calling climate change a hoax. Are you in danger of squandering your reputation as a global climate champion? some of your actions are against that ultimate goal?</u>
+  <u who="mark carney" role="politician" video_time="00:28:09">I would— a few things in what you said. First, it's not about my— my role as Prime Minister is not about my reputation. My role as Prime Minister is about what's in the best interests of Canada. Canadians care about the world. They care about climate action. They care about their fellow citizens. They care about all of those things. Those values of sustainability and solidarity fairness are fundamental to Canadians. What we need to do is to be as effective as possible in terms of addressing climate change while growing our economy.</u>
+  <u who="mishal husain" role="press" video_time="00:28:43">So what are you going to do about emissions from the oil and gas sector? Well, there is a cap that's supposed to come in. Is it true that you're considering dropping it?</u>
+  <u who="mark carney" role="politician" video_time="00:28:52">What we're focused on— look, you can say there's a cap, But saying a cap doesn't make it happen. What makes the emissions go down in the oil and gas sector, as long as Canada and America are using oil and gas, and we are, our economies are wired for that, as is the rest of the world, what makes those emissions go down will be carbon capture and storage, particularly in other efficiencies.</u>
+  <u who="mishal husain" role="press" video_time="00:29:21">So you're not stopping it then? That's what it sounds like.</u>
+  <u who="mark carney" role="politician" video_time="00:29:24">Dropping emissions from the oil and gas sector.</u>
+  <u who="mishal husain" role="press" video_time="00:29:26">Dropping the cap.</u>
+  <u who="mark carney" role="politician" video_time="00:29:26">Dropping emissions, Mishal, from the oil and gas sector. This is the point. This is about results. The climate cares about results. It doesn't care about a policy that is— an outcome is not a policy. A desired outcome is not a policy.</u>
+  <u who="mishal husain" role="press" video_time="00:29:43">So I'm getting the strong signals that that particular policy, to have a cap on emissions from the oil and gas sector, is not going to An</u>
+  <u who="mark carney" role="politician" video_time="00:29:50">outcome is not a policy. What is— what makes a difference to the climate is whether or not emissions come down. What's required for the Canadian oil sands, in this case what we're talking about, is carbon capture and storage. We signaled our first major nation-building project is something called the Pathways, which will get those emissions down. Second thing related to this, and this is crucial from a climate perspective, is Ending methane, so-called fugitive methane flaring, which is, depending on your horizon, and the horizon that we should— we're all in, in the next few decades in terms of climate warming, is up to 70 times a bigger— 70 times bigger contributor to climate change than CO2 emissions. And so we have an opportunity. We're working with the industry, working with the provinces to get those emissions, methane emissions, down to zero.</u>
+  <u who="mishal husain" role="press" video_time="00:30:42">You are— you are explaining the complexity of what you're dealing with. And I guess I just wonder whether the Mark Carney of 2020 would be slightly disappointed in the Mark Carney of 2020.</u>
+  <u who="mark carney" role="politician" video_time="00:30:51">I think if you look in the Mark— in fact, I know that looking in that book that you've got your hand on, you will see 2 important things in there. One is a discussion of exactly what I just said, the emissions reductions, and secondly, carbon value for money, which is a fundamental point, which is using scarce public dollars to most efficiently reduce emissions.</u>
+  <u who="mishal husain" role="press" video_time="00:31:17">You've clearly had a really intense few months and you've made clear what you're up against, right? Canada prospered under the old world and we're not going back to the old world. How long do you plan to serve?</u>
+  <u who="mark carney" role="politician" video_time="00:31:31">That's a great question. I think that I'm in a minority position. My party is in a minority position in Parliament. We have— we ran on a very strong mandate. In other words, going to do big things that were going to put the country in a— build the country strong.</u>
+  <u who="mishal husain" role="press" video_time="00:31:54">But I think you made such big pledges that it's hard to imagine that you could fulfill them in less than a decade. So I imagine you do want to serve 2 terms. You want to build a huge number of houses. You've made a big pledge on defense spending. You're in a tight economic framework where growth is hard to find.</u>
+  <u who="mark carney" role="politician" video_time="00:32:13">Well, you— it's a democracy and you have to ask permission from voters for the time served. I think what's essential, again, we are in a crisis. We're in an economic crisis. There's fundamental shift in the world. And we make this point and I'll make it again. It's not a transition, it's a rupture. It's big changes in a very short period of time. And I know from all my experience that in those situations, you have to act big, you have to act bold. That is what we're going to do. The politics will favorably or unfavorably will result from that. But I don't want to be in a position, however long I serve, where I didn't do what I didn't think was necessary at the time. I need to do what I think is necessary.</u>
+  <u who="mishal husain" role="press" video_time="00:32:59">And what is it We're in an age of rising populism in many countries. In Canada, the old acceptance of immigration has changed a lot and anti-immigrant sentiment is rising. Do you fear the spectre of populism? Because you've said populists don't know how to run economies.</u>
+  <u who="mark carney" role="politician" video_time="00:33:19">I— that's true. They know how to talk about it, but they know how to run economies down. I think I'll answer the question this way. We're doing big things. We're building the economy. And what's important is how we're building as well. We're building, for example, with Indigenous Canadians. In these major projects, there will always be Indigenous participation in the ownership. We are building in an inclusive way with unions. These— we're creating hundreds of thousands of high-paying, skilled careers. So when I announced our first— pardon me— when I announced our first batch of nation-building projects, where the heads of all the major unions were there with me representing the millions of workers that they— that are part of those unions. We are building sustainably. So when we— our energy projects, huge swath of clean energy projects, anything in other sectors is top quartile or top decile in terms of the lowest carbon emissions as well.</u>
+  <u who="mishal husain" role="press" video_time="00:34:21">But are you optimistic about all of this? Because everything that you're signaling is These are very hard roads to go down where there are a lot of high expectations and arguably your chances of delivering, certainly in the next 5 years, are probably relatively low. So where do you find the optimism?</u>
+  <u who="mark carney" role="politician" video_time="00:34:39">Well, I think that Canadians— I know that Canadians recognize the scale of the challenge. They want the government to act. feel fundamentally that we need to take care of ourselves. That's building for ourselves and it's diversifying around the world, and they're fundamentally supportive of that. We have— yes, we have to deliver. They're not— Canadians are not unrealistic people. They know it won't change overnight, but they need to see us doing everything we can to make sure that it changes for the medium term.</u>
+  <u who="mishal husain" role="press" video_time="00:35:17">Can we bring it back to you to close? Because this is the Bloomberg Weekend Interview. And as it happens, we're talking on a weekend. That's— you've come into the office to record this on a Saturday. What are prime ministerial weekends like for you these days?</u>
+  <u who="mark carney" role="politician" video_time="00:35:37">They are— well, I took off my tie, so that's a big, big step. They are pretty indistinguishable from prime ministerial weeks. I mean, certainly when the House of Commons is sitting, then there is a difference between the two. It's pretty fun, you know. There is no weekend, is that what you mean? In effect, there is no weekend, with the sole exception of on a weekend you can find one evening where just with the family, you might be able to go— Canada in the winter, cross-country skiing or something, or for a run. There is some element of that. But it's pretty limited, and that's fine. That's exactly what I would've expected in terms of the scale of the task. And weekend, I don't know if it's a chance to catch up on work, but it's a chance to plan a bit ahead.</u>
+  <u who="mishal husain" role="press" video_time="00:36:36">And the space to think, how do you find that? Because the papers, the staff, the people demanding decisions all the time.</u>
+  <u who="mark carney" role="politician" video_time="00:36:47">Yes, but part of the job is to create space to think and to— after all, the job is to be a leader, and to be a leader, you need to know where you're going, and knowing where you're going means you need a strategy, and that strategy may need to adapt. I mean, the world is changing very rapidly, so if I don't carve out some time on a weekend, for example, to think and think about strategy, then I'm not doing my job. It's very easy Your question's very on point because it's very easy to be consumed by the here and now. And there are so many calls on your time. Everybody wants some of your time for valid reasons that you have to resist some of that to preserve some to chart the course.</u>
+  <u who="mishal husain" role="press" video_time="00:37:33">Mark Carney, Prime Minister, thank you.</u>
+  <u who="mark carney" role="politician" video_time="00:37:35">Thank you, Mishal.</u>
+</doc></script>
+    <script id="data-pt" type="text/plain"><doc id="TIMESTAMPS" file="TIMESTAMPS.TXT">
+  <u who="mishal husain" role="imprensa" video_time="00:00:00">Olá, e sejam bem-vindos. Eu sou Mishal Husain, e este programa será um espaço em que, todo fim de semana, vocês poderão ouvir uma conversa essencial, que traz uma visão sobre as ideias e as pessoas que moldam o nosso mundo. E a minha primeira é com alguém que lidera um país bem na linha de frente da ordem global abalada. É Mark Carney, primeiro-ministro do Canadá. O país dele está na linha de frente da turbulência no comércio global. Está sob pressão do vizinho ao sul, um país com o qual tem uma conexão muito forte. Afinal, Canadá e Estados Unidos compartilham a mais longa fronteira do mundo. E, ainda assim, hoje Donald Trump continua achando que o Canadá deveria ser o 51º estado. Como resultado, o Canadá está em plena corrida para tornar sua economia mais autossuficiente. Foi nesse cenário que Mark Carney entrou há 7 meses, quando era totalmente novo na política. Ele é economista de formação, ex-presidente de banco central, defensor da causa climática e hoje está encarregado de conduzir uma economia baseada em combustíveis fósseis por esses tempos incertos. Nós conversamos em um fim de semana. Ele passou pelos estúdios da Bloomberg em Londres, um lugar que conhece bem, já que presidiu o conselho aqui no passado. Estava em Londres para assistir à final da Copa do Mundo de Rúgbi entre a seleção feminina do Canadá e a da Inglaterra. Infelizmente para o Canadá, elas perderam. Mas conversamos sobre Donald Trump, é claro, sobre grandes movimentos de política externa envolvendo a Ucrânia e Gaza, e sobre a filosofia de liderança de Carney. Para entender o que o motiva, comecei pedindo que ele me levasse de volta aos seus primeiros anos, à sua família e ao lugar onde nasceu, Fort Smith, nos Territórios do Noroeste do Canadá.</u>
+  <u who="mark carney" role="político" video_time="00:01:53">O norte. Eu não diria que seja tecnicamente até o Ártico, mas quase. Eles foram para o norte como, sim, uma aventura, um trabalho pioneiro. Eram jovens professores indo para o que parecia ser a fronteira. É claro que já havia gente lá. Então havia esse elemento também. Um forte senso de serviço público na minha família. Meu pai era funcionário público. Como eu disse, meus pais são educadores. Um sentimento de que aquilo é a vocação mais elevada. Então sempre tive esse elemento, mesmo tendo feito carreira no setor privado. Tive a sorte de ser presidente do banco central, como você diz, em 2 países do G7, e numa época em que, por causa de grandes problemas financeiros, inclusive aqui na City de Londres, esse cargo era mais amplo do que o normal, com grandes reformas financeiras em curso, que precisavam ser negociadas no mundo todo. Então, nesse sentido, eu vinha pensando no que viria depois no serviço público, sim. Com toda a franqueza, a perspectiva de me tornar um político eleito no Canadá, quanto mais primeiro-ministro, me parecia estar ficando cada vez mais distante. E então, ao longo do ano e na corrida até o momento em que me candidatei, fui ficando cada vez mais preocupado, como outras pessoas também ficaram, com a possível direção do nosso país, e senti que, dada a minha trajetória, eu teria a chance de ajudar a mudá-la.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:03:16">Você foi eleito por causa do presidente Trump, na verdade?</u>
+  <u who="mark carney" role="político" video_time="00:03:18">Fui eleito— bem, isso você teria que perguntar aos eleitores do Canadá. Eu acho que—</u>
+  <u who="mishal husain" role="imprensa" video_time="00:03:24">Bem, você se candidatou por causa do presidente Trump, não foi? Você tomou a decisão pouco antes— anunciou pouco antes da posse.</u>
+  <u who="mark carney" role="político" video_time="00:03:29">Eu não me candidatei por causa do presidente Trump, não. Candidatei-me porque acreditava que a pessoa que provavelmente se tornaria primeiro-ministro, com certeza em todas as pesquisas, não era a pessoa certa para o Canadá, que seria um governo divisivo nesse caso e teria levado nosso país para trás, em vez de para a frente. Acontece que, muito rapidamente, quando eu já estava na campanha pela liderança, antes de me tornar líder do Partido Liberal e depois, antes da campanha da eleição geral, as ações do presidente Trump na guerra comercial, como ela é chamada, realmente se intensificaram, e então eu passei a ser mais relevante. Então, com certeza, sim, ajudou o fato de as pessoas avaliarem que eu era a pessoa mais bem posicionada para lidar com isso. Então você entrou numa disputa pela</u>
+  <u who="mishal husain" role="imprensa" video_time="00:04:11">liderança. Você entrou nela de olhos abertos, mas o que o surpreendeu nesses 6 a 7 meses?</u>
+  <u who="mark carney" role="político" video_time="00:04:19">O que mais me surpreendeu? Acho que algumas coisas. Uma é como isso é implacável. Tomei a decisão no início de janeiro de me candidatar à liderança e, desde então, tem sido sem parar, o mais próximo possível de 24 horas por dia, 7 dias por semana. Eu sabia disso conceitualmente. Já tinha tido empregos de alta pressão, mas isso é muito mais. Então esse é o primeiro ponto. Acho que a importância e a fluidez das relações internacionais— eu sabia que as relações internacionais são importantes, mas a fluidez dessas relações e a importância desses vínculos, dessas relações pessoais com líderes mundiais, algumas das quais eu já tinha de antemão, mas— outras tive que desenvolver. Isso me surpreendeu, o grau de importância que isso tem.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:05:12">Do que você sente falta da sua vida antiga? Imagino que a sua família provavelmente sinta falta da sua antiga</u>
+  <u who="mark carney" role="político" video_time="00:05:16">vida. Sim, tenho certeza de que sentem. Sinto falta de— do que eu sinto falta? Sinto falta de ter qualquer privacidade, basicamente.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:05:27">Eu estava pensando em algo que você disse em 2020, sobre como é mais fácil ser banqueiro central numa democracia do que ser político. Mas parece que isso nem é metade da história, não é? Você se tornou primeiro-ministro numa época em que o comércio global está abalado como nunca. As alianças globais estão sob pressão como nunca. Como tem sido?</u>
+  <u who="mark carney" role="político" video_time="00:05:50">Mantenho a minha afirmação anterior de que era mais fácil ser banqueiro central. É— bem, parte do motivo de eu estar nesta posição é justamente o que você acabou de descrever. É parte do motivo pelo qual me coloquei à disposição. Possivelmente um dos motivos pelos quais fui eleito. Em alguns aspectos, vou dizer uma coisa estranha. Em alguns aspectos, é mais fácil quando os problemas estão muito claramente à frente de todos. Acho que todos os canadenses entendem que a nossa relação com os Estados Unidos mudou fundamentalmente, que o mundo é um lugar mais perigoso e dividido, e então a pergunta passa a ser: o que fazemos a respeito? E às vezes, só de refletir, se você olhar para trás, quando os tempos eram bons, entre aspas, mas os problemas iam se acumulando, é aí que é mais difícil tomar as grandes decisões que são necessárias.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:06:47">Ao passo que aqui, você sabe como as coisas estão.</u>
+  <u who="mark carney" role="político" video_time="00:06:48">Aqui, você sabe que temos que agir. É importante ser o mais aberto possível com as pessoas quanto à avaliação da dimensão do que precisa ser feito, e então— e então ser decisivo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:07:00">Quero mesmo explorar o quanto a sua tarefa é mais difícil como primeiro-ministro em algumas das suas prioridades internas e, certamente, nas suas prioridades de política externa, porque os Estados Unidos não são o parceiro que já foram e porque as prioridades deles mudaram. É claro que você tem questões bilaterais específicas com os Estados Unidos, principalmente em torno do comércio, e a economia canadense foi duramente atingida pelo que o presidente Trump fez, particularmente no aço e, e e no setor automotivo e no alumínio. Qual é a sua estratégia para quando o acordo comercial EUA-México-Canadá for revisado no próximo verão? Você está— você espera que a economia americana, até lá, esteja numa posição em que o presidente Trump adote uma visão diferente sobre as tarifas?</u>
+  <u who="mark carney" role="político" video_time="00:07:45">Queremos o melhor para a economia dos EUA, assim como queremos— bem, um pouco mais forte, queremos o melhor para a economia canadense. Mas não, a nossa estratégia não é esperar por alguma fraqueza na economia dos EUA que vá mudar a posição negociadora americana. A nossa estratégia, parte da nossa estratégia tem sido, bem, buscar o melhor acordo para o Canadá. Temos o melhor acordo comercial no momento. 85% do nosso comércio com os Estados Unidos está livre de tarifas. Temos a menor tarifa média contra— de qualquer país com os EUA. É de 5,5%. Então estamos numa boa posição agora, com 2 ressalvas importantes. Uma é a sua pergunta: o que vai acontecer com a renegociação do que chamam de USMCA? E, em segundo lugar, alguns setores-chave, aço, automóveis, alumínio, produtos florestais, sendo os principais. Vamos deixar cada vez mais claro que, em determinados setores, particularmente, a integração das economias canadense, americana e mexicana é essencial para a competitividade dos EUA. No aço, nos automóveis, como 2 exemplos, os vínculos são tão estreitos, tão estreitos que o conteúdo canadense— ou melhor, o conteúdo americano nos automóveis acabados canadenses é maior do que o conteúdo americano médio nos automóveis americanos. Então nós deixamos os Estados Unidos mais fortes nesses setores, e a nossa estratégia é garantir que isso seja o mais bem compreendido possível.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:09:14">Certo, então a prosperidade dos dois países está em jogo. A sua linguagem, porém, mudou em relação ao presidente Trump desde que você— Você se lembra de quando o chamou de valentão que precisava ser enfrentado, em fevereiro, durante a campanha? Vamos enfrentar um valentão. Não vamos recuar. E, no entanto, agora você é muito mais propenso a falar em termos mais conciliatórios. Quer dizer, obviamente uma coisa é fazer campanha e outra é governar, mas talvez as pessoas que queriam que você enfrentasse o valentão possam sentir que você não fez isso tanto quanto sugeriu quando fazia campanha.</u>
+  <u who="mark carney" role="político" video_time="00:09:48">Bem, sejamos claros quanto à situação real. Somos um dos— há 2 países, efetivamente, que impuseram tarifas de retaliação aos Estados Unidos. 2 países no mundo. Nós as impusemos, as mantivemos. Mantivemos até o ponto em que deixaram de ser eficazes. Chegamos a um ponto em que retiramos nossas tarifas de retaliação, e tínhamos 85% do nosso comércio livre de tarifas. Quando as impusemos, dadas as medidas que o presidente Trump havia tomado, era menos de— era um terço do nosso comércio que estava livre de tarifas. Então, sabe, me parece que isso é bastante eficaz.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:10:29">Número um— Mas ele demonstrou o poder dele sobre você, não demonstrou? Por exemplo, o seu imposto sobre serviços digitais. Você o anunciou, ele odiou. Você teve que recuar.</u>
+  <u who="mark carney" role="político" video_time="00:10:36">O imposto sobre serviços digitais foi anunciado vários anos antes. Estava, na prática, prestes a entrar em vigor. Estava entrando em vigor. Olha, os Estados Unidos—</u>
+  <u who="mishal husain" role="imprensa" video_time="00:10:44">E não podia, porque o presidente Trump não ia tolerar</u>
+  <u who="mark carney" role="político" video_time="00:10:46">isso. Tomamos uma decisão nesse contexto. E vamos— o que aconteceu depois que retiramos esse imposto sobre serviços digitais? Em poucas semanas, o presidente confirmou por escrito, confirmou formalmente em uma ordem executiva, esse status de isenção de tarifas para a grande maioria do nosso comércio.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:11:05">Então havia algo maior em jogo.</u>
+  <u who="mark carney" role="político" video_time="00:11:06">Há algo maior. Entendo isso.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:11:07">Eu entendo. Mas fico me perguntando como— como você se reconcilia com isso, porque é diferente do tom que você adotava antes.</u>
+  <u who="mark carney" role="político" video_time="00:11:14">Bem, eu me reconcilio— minha responsabilidade é conseguir o melhor acordo possível para o Canadá. Temos o melhor acordo do mundo neste momento. Agora, a próxima questão é: onde vai terminar a negociação do USMCA? Sim, o acordo comercial, onde o acordo comercial mais amplo vai terminar. E estamos nos preparando para isso e trabalhando com os EUA nisso. Mas vamos ser absolutamente claros. Os Estados Unidos têm, sim, um enorme poder de barganha no curto prazo sobre o Canadá, sobre a União Europeia, sobre o Reino Unido, porque nossas economias se interligaram com base em certas premissas. Essas premissas agora mudaram. E, portanto, parte disso é estabilizar essa relação. É direito dos EUA ter prioridades diferentes. Respeitamos que tenham feito essa escolha. Buscamos estabilizar a relação comercial. Bem, quais são os novos termos, sob os novos objetivos dos Estados Unidos, que atendem aos melhores interesses do Canadá? E então a grande coisa que fazemos, e uma grande parte, penso eu, do motivo de eu ter sido eleito, foi: o que mais vamos fazer? E um dos pontos centrais que apresentamos desde o início é que podemos dar a nós mesmos muito mais do que os Estados Unidos podem tirar. Então temos capacidade de ação. Podemos ter uma única economia canadense. Demos passos importantes rumo a essa economia canadense única.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:12:39">Leva tempo.</u>
+  <u who="mark carney" role="político" video_time="00:12:40">Leva tempo. Leva tempo, mas vale a pena, porque nunca mais queremos estar nessa posição. Nunca mais queremos estar nessa posição. E isso é construir em casa e diversificar no exterior. Estamos dando esta entrevista em Londres. Parte do motivo de eu estar em Londres é o aprofundamento da nossa relação comercial com o Reino Unido.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:12:57">Com os Estados Unidos. Exatamente. Porque 75% do seu comércio é com os Estados Unidos. E isso agora tem problemas.</u>
+  <u who="mark carney" role="político" video_time="00:13:03">E isso vai mudar.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:13:04">Certo. Você aprendeu alguma coisa com o presidente Trump?</u>
+  <u who="mark carney" role="político" video_time="00:13:08">Se aprendi? Aprendi muitas coisas com o presidente Trump. A gente sempre aprende coisas com as pessoas. Aprendi o valor— não subscrevo totalmente isso, mas vejo a eficácia— o valor do termo que eles usariam, inundar a zona, de fazer várias coisas ao mesmo tempo e a eficácia que isso pode ter. Acho que ele tem uma maneira muito eficaz, à sua maneira quase única, de enquadrar as questões e de dominar a pauta, se é que posso dizer assim também.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:13:47">Cheguei a me perguntar até sobre o modo como você, sabe, quando cancelou o imposto sobre o carbono, assinou diante das câmeras, com um floreio. Foi no estilo de ordem executiva. Você aprendeu um elemento de encenação, tipo, que é preciso ser visto fazendo o trabalho de determinado jeito? Porque não pareceu muito canadense fazer isso, assinar diante das câmeras com um floreio.</u>
+  <u who="mark carney" role="político" video_time="00:14:06">Acho que— não sei se isso— é interessante. Eu não atribuiria isso a ele em si. Acho apenas que, num momento em que há muita pressão, em que as pessoas estão sob muita pressão, há muita incerteza, o valor de ser muito claro— então vou pegar o exemplo que você usou. Esse foi o primeiro dia em que me tornei primeiro-ministro. A primeira coisa que fizemos foi cancelar aquele imposto sobre o carbono. A coisa seguinte que fiz foi vir à Europa, vir ao Reino Unido, e ir ao Ártico canadense, os três povos fundadores do Canadá— os franceses, os britânicos e os canadenses indígenas— e destacar a nossa soberania, a nossa história, mas também estabelecer acordos comerciais com os dois primeiros e uma importante intenção de investir no nosso Ártico em defesa e segurança. E então essas duas coisas tinham substância. Cancelamos o imposto sobre o carbono. Essas viagens tiveram substância porque estavam estabelecendo acordos comerciais e de segurança. Mas também tinham, sim, simbolismo, história, soberania, ação. E quando você está numa— desculpe, Mishal. Mas quando você está numa crise, particularmente, neste caso, uma crise comercial, uma crise econômica, uma crise de soberania, dados alguns dos pontos que o presidente Trump tem levantado sobre o 51º estado. Quando você está numa crise, é preciso não apenas agir com decisão, mas ser visto agindo com decisão. E isso, isso é o que estávamos fazendo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:15:35">Podemos explorar isso primeiro pela Ucrânia? Você faz parte da Coalizão dos Dispostos. Há uma grande comunidade ucraniano-canadense. Então a Ucrânia é importante para o país como um todo, assim como tenho certeza de que é para você pessoalmente. O presidente Trump agora está falando da vitória da Ucrânia, mas, quando o faz, enfatiza que a Ucrânia, na opinião dele, vai fazer isso com a ajuda da Europa. Em que medida a Ucrânia pode vencer sem que os EUA estejam totalmente na linha de frente e ofereçam as salvaguardas de segurança para o futuro?</u>
+  <u who="mark carney" role="político" video_time="00:16:04">Certo, então há muita coisa nessa pergunta, e acho importante distinguir os componentes. A Ucrânia com a ajuda da Europa, com a ajuda do Canadá, e o Canadá é o maior contribuinte per capita para a Ucrânia. Em termos de dólares, estamos contribuindo militarmente e também em bases humanitárias. E estamos lá desde o início, e o início foi 2014. O início não foi há 3 anos. O início foi 2014, com a invasão ilegal, anexação da Crimeia, tentativa de anexação, eu diria. Os EUA são essenciais para algumas coisas. Com relação à Ucrânia. São essenciais para certos equipamentos militares, o fornecimento desses equipamentos militares. Estamos dispostos a, ou entendemos a necessidade de, comprar esse equipamento em nome da Ucrânia ou ajudar a Ucrânia a financiar esse equipamento em muitos casos. Então ele não precisa ser fornecido diretamente pelos Estados Unidos. Obviamente seria mais fácil se os EUA fizessem mais fornecimento direto, mas isso não é uma questão intransponível. O que é essencial é esta outra parte da sua pergunta: quando houver um fim das hostilidades, alguma forma de cessar-fogo, paz, conflito congelado, seja como for que termine, a coalizão, a primeira linha de defesa será o exército ucraniano, reforçado. A Coalizão dos Dispostos, da qual o Canadá faz parte, o Reino Unido, outros, a França, fornecerá garantias de segurança importantes. Mas a salvaguarda final precisa ter alguma forma de respaldo, em nosso julgamento e no julgamento de muitos outros, dos Estados Unidos. Então os Estados Unidos</u>
+  <u who="mishal husain" role="imprensa" video_time="00:17:43">são— O que é— não houve nenhum compromisso.</u>
+  <u who="mark carney" role="político" video_time="00:17:45">Houve.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:17:46">É por isso que perguntei até onde a Ucrânia pode chegar.</u>
+  <u who="mark carney" role="político" video_time="00:17:48">Houve. Bem, há a vitória. Há a vitória. Podemos debater como isso é definido, mas vencer militarmente no campo de batalha, chegar a uma posição em que haja um acordo de paz, um cessar-fogo, um conflito congelado, algum entendimento. Eles podem chegar a essa posição com o apoio da Europa, o apoio do Canadá, o apoio da Austrália, o apoio de alguns outros, e com os EUA num papel mais secundário. Ter uma paz duradoura, um fim duradouro das hostilidades exigirá o respaldo dos EUA— quer dizer, exigirá— A forma que isso poderia assumir está em discussão ativa no nível militar, no nível de segurança nacional. Fazemos parte dessas discussões. É verdade que nada foi concretamente acordado e detalhado. Mas eu diria que o nível de engajamento é animador.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:18:46">Com os EUA?</u>
+  <u who="mark carney" role="político" video_time="00:18:47">Com os EUA, sim.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:18:48">Então você espera chegar lá. O problema é que, neste momento, parece mesmo que a Rússia está encorajada. Drones no espaço aéreo da OTAN, jatos no espaço aéreo da OTAN, como aconteceu sobre a Estônia?</u>
+  <u who="mark carney" role="político" video_time="00:18:59">Eu reformularia. A Rússia está sob pressão. A Rússia está sob pressão. Eles estão tentando o que podem para mudar o quadro, mas estão sob pressão econômica. A situação militar deles, eles vinham fazendo algum progresso ao longo do verão. Esse progresso parou. Parte dele começou a ser revertida.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:19:19">Mas é perturbador para um país como a Estônia ter jatos russos no seu espaço aéreo.</u>
+  <u who="mark carney" role="político" video_time="00:19:24">O Canadá tem tropas na linha de frente na Letônia.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:19:27">Certo, mas aqui vai uma coisa bem concreta. Se isso acontecer de novo, você apoia a ideia de um país da OTAN abater esse jato russo?</u>
+  <u who="mark carney" role="político" video_time="00:19:37">A direta— todas as opções estão sobre a mesa, sem dúvida. Há consultas em andamento dentro da OTAN. Os países da OTAN se defendem e, com certeza, faremos o que for necessário para proteger esses países.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:19:55">Você está alertando a Rússia de que é possível que um país da OTAN abata um dos aviões deles?</u>
+  <u who="mark carney" role="político" video_time="00:20:01">Claro, de forma tão indireta quanto— se me permite, por exemplo, o governo polonês fez esses alertas diretamente, em público.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:20:07">Há um precedente, porque a Turquia fez isso com um avião russo há 10 anos.</u>
+  <u who="mark carney" role="político" video_time="00:20:11">Sim.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:20:11">É esse o tipo de mensagem que você acha que pode ser necessária num momento como este para mostrar à Rússia que a OTAN está falando sério? Porque o presidente Trump não está realmente mostrando à Rússia, mas os EUA estão falando sério sobre a Ucrânia?</u>
+  <u who="mark carney" role="político" video_time="00:20:23">Acho que o presidente Trump tem sido muito importante nesse processo. Ele deu uma chance à paz, por assim dizer, com a Rússia. Ele tem estado, sabe, em linhas de comunicação com Vladimir Putin, com seu enviado especial Steve Witkoff. Houve conversas diretas, houve oportunidades para Putin pegar rotas de saída. Putin não pegou nenhuma dessas rotas de saída. O presidente fala por si mesmo, mas acho que a paciência dele está se esgotando. A linha dele está endurecendo. A probabilidade de novas sanções econômicas contra a Rússia está aumentando, e a severidade dessa próxima fase de sanções pode ser de uma ordem de grandeza diferente das rodadas anteriores de sanções. Tudo isso aponta numa direção. E eu destacaria que a Rússia tem avançado literalmente a passo de caracol na aquisição de território, aquisição temporária de território na Ucrânia, ao longo dos últimos 3 anos. E eles não vão vencer. Eles não vão vencer esta guerra. E é uma questão de— Eles estão percebendo isso. E eu pessoalmente acho que as ações de Vladimir Putin ao longo dos últimos meses, desprezando a oportunidade que o presidente Trump lhe deu em múltiplas ocasiões, essas incursões de drones, se forem intencionais, como cada vez mais parecem ser, acho que isso é—</u>
+  <u who="mishal husain" role="imprensa" video_time="00:21:59">Mas você acha que ele está fazendo o cálculo de que os EUA não— de que não há consequências por rejeitar a oportunidade?</u>
+  <u who="mark carney" role="político" video_time="00:22:04">O presidente Putin só fez calcular errado nesta guerra. Ele calculou que a OTAN ficaria dividida. A OTAN se solidificou. Basta olhar para os compromissos de junho. Basta olhar como estamos agindo. Ele calculou que a Ucrânia capitularia em questão de dias. Calculou que o presidente Zelensky fugiria. Calculou que haveria um levante a seu favor. Ele calculou mal de forma consistente neste conflito.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:22:31">Outra das suas prioridades de política externa tem sido o reconhecimento, o reconhecimento de um Estado palestino, com o qual os EUA discordam fundamentalmente. Qual é o seu próximo passo nessa questão?</u>
+  <u who="mark carney" role="político" video_time="00:22:43">Sim, então— eu diria que a prioridade de política externa era— o reconhecimento, não o fim. O fim é um Estado palestino livre e viável vivendo lado a lado, em paz e segurança, com o Estado de Israel. Esse é o objetivo final. O que vimos, só para deixar claro por que fizemos o que fizemos, foi que as ações do atual governo, o governo Netanyahu, foram explicitamente concebidas para acabar com qualquer possibilidade de um Estado da Palestina, em violação da Carta da ONU e contrariando a política do governo canadense, de qualquer matiz político, desde 1947. Fizemos isso porque a perspectiva estava se esvaindo, e não por ver nisso algum tipo de panaceia, um divisor de águas que levasse imediata e fundamentalmente ao resultado que nós e outros queremos. Sim, os EUA discordam da decisão que tomamos, que a Espanha tomou, que a França tomou, que o Reino Unido tomou, que 150 outros países da ONU tomaram, mas eles— o nosso objetivo comum é o mesmo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:23:52">Sim, então o fim— para o objetivo final, o estabelecimento efetivo de um Estado palestino vivendo lado a lado com um Israel seguro, para chegar a isso você vai ter que manter a pressão sobre o governo israelense. Justin Trudeau disse que o Canadá cumpriria os mandados de prisão do Tribunal Penal Internacional, ou seja, que Benjamin Netanyahu seria preso se viesse ao Canadá. Isso se mantém sob a sua liderança?</u>
+  <u who="mark carney" role="político" video_time="00:24:14">Sim.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:24:15">Você estaria preparado para fazer isso?</u>
+  <u who="mark carney" role="político" video_time="00:24:17">Sim.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:24:18">Também estamos numa crise climática?</u>
+  <u who="mark carney" role="político" video_time="00:24:19">Estamos numa crise climática, sim.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:24:20">Certo. Isso é— a última vez que conversamos foi na Conferência do Clima de Glasgow. Pegue os seus fones de ouvido, porque quero tocar para você uma coisa que você disse na época, quando era Enviado Especial da ONU para Ação Climática e Finanças. Aqui está o que você disse.</u>
+  <u who="mark carney" role="político" video_time="00:24:35">As fragilidades humanas criam uma tragédia do horizonte. Isso significa que os impactos catastróficos da mudança climática recairão em grande parte sobre as gerações futuras. A geração atual, com os nossos horizontes fixados no noticiário, nos negócios e nos ciclos políticos do momento, tem poucos incentivos diretos para resolver a questão, embora, quanto mais cedo agirmos, menos custoso será.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:24:59">Você é muito conhecido por essas palavras, essa expressão, a tragédia do horizonte. Ela é toda sobre como é preciso pensar no longo prazo, em vez de em termos de um horizonte de curto prazo. E, no entanto, no cargo, você acabou com o imposto sobre o carbono para o consumidor. Você suspendeu a obrigatoriedade que empurrava as montadoras a vender cada vez mais veículos elétricos. E agora há relatos de que você está prestes a abandonar o teto de emissões do setor de petróleo e gás. O que aconteceu com você?</u>
+  <u who="mark carney" role="político" video_time="00:25:28">Eu sou o mesmo. Estou focado nas mesmas questões. E a pergunta é: como se avança em direção a essas questões? E, em particular, como se avança de forma mais eficaz? Como se avança com a máxima eficácia? Então vou detalhar essas questões. O imposto sobre o carbono para o consumidor seria, na melhor das hipóteses, responsável por uma parcela de um dígito alto das reduções de emissões ao longo dos próximos 25 anos. Então não era— era algo, mas estava longe de ser a medida mais importante em vigor. Era extremamente divisivo politicamente e teria contribuído para um governo no poder que teria cancelado todas as políticas climáticas na prática. Primeiro ponto. Esse é o desenho desse imposto sobre o carbono, esse aspecto do imposto sobre o carbono em relação a—</u>
+  <u who="mishal husain" role="imprensa" video_time="00:26:28">É, não era perfeito.</u>
+  <u who="mark carney" role="político" video_time="00:26:29">Não era perfeito, mas teve efeito. Então a questão é, e a questão é como usar o escasso capital do governo, o dinheiro do governo, o dinheiro dos contribuintes e o capital político para ter o máximo efeito. E então o máximo efeito, vou ser mais direto sobre o que estamos fazendo. Então, uma das maiores— 20% das emissões do Canadá, por aí, vêm do setor de edificações, de casas e prédios comerciais. Fizemos muito pouco em termos de reduzir essas emissões. Estamos agora embarcando em uma das maiores medidas de construção de moradias da nossa história, ou seja, mais de 20% menos de carbono incorporado na produção dessas casas, mais de 20% menos de pegada de carbono no funcionamento dessas casas. Então isso, em si, é uma estratégia habitacional, é uma estratégia econômica, mas é uma estratégia climática ao mesmo tempo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:27:24">E, no entanto, lendo o seu livro, que trata de valores e não de valor de mercado, e lendo a forma como você enfatiza que essas são questões urgentes, que tudo, tudo o que você faz deveria levá-lo um passo além rumo ao bem comum, que é manter as temperaturas globais o mais próximo possível de 1,5 grau. Você é o único líder do G7 que já foi enviado da ONU para a ação climática.</u>
+  <u who="mark carney" role="político" video_time="00:27:52">Sim, é verdade.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:27:53">E o mundo está clamando por liderança nisso, não é? O presidente Trump chama a mudança climática de farsa. Você corre o risco de desperdiçar a sua reputação de campeão climático global? Algumas das suas ações vão contra esse objetivo final?</u>
+  <u who="mark carney" role="político" video_time="00:28:09">Eu diria— algumas coisas sobre o que você disse. Primeiro, não se trata da minha— o meu papel como primeiro-ministro não é sobre a minha reputação. O meu papel como primeiro-ministro é sobre o que é do melhor interesse do Canadá. Os canadenses se importam com o mundo. Eles se importam com a ação climática. Eles se importam com os seus concidadãos. Eles se importam com todas essas coisas. Esses valores de sustentabilidade, solidariedade e justiça são fundamentais para os canadenses. O que precisamos fazer é ser o mais eficazes possível no enfrentamento da mudança climática, ao mesmo tempo em que fazemos a nossa economia crescer.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:28:43">Então o que você vai fazer em relação às emissões do setor de petróleo e gás? Bem, existe um teto que deveria entrar em vigor. É verdade que você está considerando abandoná-lo?</u>
+  <u who="mark carney" role="político" video_time="00:28:52">No que estamos focados— olha, você pode dizer que existe um teto, mas dizer um teto não faz acontecer. O que faz as emissões caírem no setor de petróleo e gás, enquanto o Canadá e os Estados Unidos estiverem usando petróleo e gás, e estamos, as nossas economias estão estruturadas para isso, assim como o resto do mundo, o que faz essas emissões caírem será a captura e o armazenamento de carbono, particularmente, e outras eficiências.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:29:21">Então você não vai impedir isso, então? É o que parece.</u>
+  <u who="mark carney" role="político" video_time="00:29:24">Derrubar as emissões do setor de petróleo e gás.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:29:26">Derrubar o teto.</u>
+  <u who="mark carney" role="político" video_time="00:29:26">Derrubar as emissões, Mishal, do setor de petróleo e gás. Esse é o ponto. Trata-se de resultados. O clima se importa com resultados. Ele não se importa com uma política que é— um resultado não é uma política. Um resultado desejado não é uma política.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:29:43">Então estou recebendo sinais fortes de que essa política em particular, a de ter um teto para as emissões do setor de petróleo e gás, não vai Um</u>
+  <u who="mark carney" role="político" video_time="00:29:50">resultado não é uma política. O que— o que faz diferença para o clima é se as emissões caem ou não. O que é necessário para as areias betuminosas canadenses, neste caso do que estamos falando, é captura e armazenamento de carbono. Sinalizamos que o nosso primeiro grande projeto de construção nacional é algo chamado Pathways, que vai reduzir essas emissões. A segunda coisa relacionada a isso, e isso é crucial do ponto de vista climático, é acabar com o metano, o chamado metano fugitivo, a queima em tocha, que é, dependendo do seu horizonte, e o horizonte em que devemos— em que estamos todos, nas próximas décadas em termos de aquecimento climático, até 70 vezes maior— 70 vezes maior como contribuinte para a mudança climática do que as emissões de CO2. E então temos uma oportunidade. Estamos trabalhando com a indústria, trabalhando com as províncias para reduzir essas emissões, as emissões de metano, a zero.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:30:42">Você está— você está explicando a complexidade do que está enfrentando. E acho que fico só me perguntando se o Mark Carney de 2020 ficaria um pouco decepcionado com o Mark Carney de 2020.</u>
+  <u who="mark carney" role="político" video_time="00:30:51">Acho que, se você olhar no Mark— na verdade, eu sei que, olhando nesse livro em que você está com a mão, você verá 2 coisas importantes ali. Uma é uma discussão exatamente do que acabei de dizer, as reduções de emissões, e a segunda, o custo-benefício do carbono, que é um ponto fundamental, que é usar escassos dólares públicos para reduzir as emissões da forma mais eficiente.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:31:17">Você claramente teve alguns meses muito intensos e deixou claro aquilo que enfrenta, certo? O Canadá prosperou sob o velho mundo e não vamos voltar ao velho mundo. Por quanto tempo você pretende servir?</u>
+  <u who="mark carney" role="político" video_time="00:31:31">Ótima pergunta. Acho que estou numa posição minoritária. Meu partido está em posição minoritária no Parlamento. Nós— concorremos com um mandato muito forte. Ou seja, que íamos fazer grandes coisas, que colocariam o país numa— que construiriam um país forte.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:31:54">Mas acho que você fez promessas tão grandes que é difícil imaginar que possa cumpri-las em menos de uma década. Então imagino que você queira cumprir 2 mandatos. Você quer construir um número enorme de casas. Fez uma grande promessa em gastos com defesa. Você está num arcabouço econômico apertado, em que o crescimento é difícil de encontrar.</u>
+  <u who="mark carney" role="político" video_time="00:32:13">Bem, é uma democracia e é preciso pedir permissão aos eleitores pelo tempo de serviço. Acho que o essencial, de novo, é que estamos numa crise. Estamos numa crise econômica. Há uma mudança fundamental no mundo. E esse é um ponto que destacamos, e vou destacá-lo de novo. Não é uma transição, é uma ruptura. São grandes mudanças num período muito curto de tempo. E sei, por toda a minha experiência, que, nessas situações, é preciso agir em grande escala, é preciso agir com ousadia. É isso que vamos fazer. A política, favorável ou desfavoravelmente, resultará disso. Mas não quero estar numa posição, por mais tempo que eu sirva, em que eu não tenha feito o que achava necessário na hora. Preciso fazer o que acho necessário.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:32:59">E o que é isso— Estamos numa era de populismo em ascensão em muitos países. No Canadá, a antiga aceitação da imigração mudou muito e o sentimento anti-imigrante está crescendo. Você teme o espectro do populismo? Porque você já disse que os populistas não sabem administrar economias.</u>
+  <u who="mark carney" role="político" video_time="00:33:19">Eu— é verdade. Eles sabem falar sobre isso, mas sabem como arruinar economias. Acho que vou responder à pergunta assim. Estamos fazendo grandes coisas. Estamos construindo a economia. E o que importa é também como estamos construindo. Estamos construindo, por exemplo, com os canadenses indígenas. Nesses grandes projetos, sempre haverá participação indígena na propriedade. Estamos construindo de forma inclusiva com os sindicatos. Esses— estamos criando centenas de milhares de carreiras qualificadas e bem remuneradas. Então, quando anunciei o nosso primeiro— com licença— quando anunciei o nosso primeiro lote de projetos de construção nacional, os líderes de todos os principais sindicatos estavam lá comigo, representando os milhões de trabalhadores que— que fazem parte desses sindicatos. Estamos construindo de forma sustentável. Então, quando nós— os nossos projetos de energia, uma enorme gama de projetos de energia limpa, qualquer coisa em outros setores está no quartil superior ou no decil superior em termos das menores emissões de carbono também.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:34:21">Mas você está otimista em relação a tudo isso? Porque tudo o que você está sinalizando é— Esses são caminhos muito difíceis de percorrer, em que há muitas expectativas altas e, sem dúvida, as suas chances de entregar, certamente nos próximos 5 anos, são provavelmente relativamente baixas. Então onde você encontra o otimismo?</u>
+  <u who="mark carney" role="político" video_time="00:34:39">Bem, acho que os canadenses— sei que os canadenses reconhecem a dimensão do desafio. Querem que o governo aja. Sentem, no fundo, que precisamos cuidar de nós mesmos. Isso é construir para nós mesmos e diversificar pelo mundo, e eles apoiam isso de forma fundamental. Nós temos— sim, temos que entregar. Eles não— os canadenses não são pessoas irrealistas. Sabem que não vai mudar da noite para o dia, mas precisam nos ver fazendo tudo o que podemos para garantir que mude no médio prazo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:35:17">Podemos trazer a conversa de volta para você, para encerrar? Porque esta é a Bloomberg Weekend Interview. E, por acaso, estamos conversando num fim de semana. É— você veio ao escritório para gravar isto num sábado. Como são os fins de semana de um primeiro-ministro hoje em dia?</u>
+  <u who="mark carney" role="político" video_time="00:35:37">São— bem, tirei a gravata, então é um grande, grande passo. São praticamente indistinguíveis das semanas de um primeiro-ministro. Quer dizer, certamente, quando a Câmara dos Comuns está em sessão, aí há uma diferença entre as duas. É bem divertido, sabe. Não existe fim de semana, é isso que você quer dizer? Na prática, não existe fim de semana, com a única exceção de que, num fim de semana, você consegue achar uma noite em que, só com a família, talvez dê para ir— o Canadá no inverno, esquiar no esqui de fundo ou algo assim, ou ir correr. Há algum elemento disso. Mas é bem limitado, e tudo bem. É exatamente o que eu esperaria em termos da dimensão da tarefa. E o fim de semana, não sei se é uma chance de pôr o trabalho em dia, mas é uma chance de planejar um pouco à frente.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:36:36">E o espaço para pensar, como você encontra isso? Porque os documentos, a equipe, as pessoas exigindo decisões o tempo todo.</u>
+  <u who="mark carney" role="político" video_time="00:36:47">Sim, mas parte do trabalho é criar espaço para pensar e— afinal, o trabalho é ser um líder, e, para ser um líder, é preciso saber para onde se está indo, e saber para onde se está indo significa que é preciso ter uma estratégia, e essa estratégia pode precisar se adaptar. Quer dizer, o mundo está mudando muito rapidamente, então, se eu não reservar algum tempo num fim de semana, por exemplo, para pensar e pensar sobre estratégia, então não estou fazendo o meu trabalho. É muito fácil— A sua pergunta é muito pertinente, porque é muito fácil ser consumido pelo aqui e agora. E são tantas as demandas sobre o seu tempo. Todo mundo quer um pouco do seu tempo por razões válidas, a ponto de você ter que resistir a parte disso para preservar um pouco para traçar o rumo.</u>
+  <u who="mishal husain" role="imprensa" video_time="00:37:33">Mark Carney, primeiro-ministro, obrigado.</u>
+  <u who="mark carney" role="político" video_time="00:37:35">Obrigado, Mishal.</u>
+</doc></script>
+    <script id="data-questions" type="text/plain">PERGUNTAS DE AVALIADOR - Entrevista Mishal Husain / Mark Carney
+Tradução simultânea inglês-português: justificativa de escolhas de tradução
+
+Observação: cada horário aponta para um pouco antes da expressão (cerca de uma frase antes, ou o começo da fala), para dar o contexto. A expressão aparece logo depois. Os segundos são estimativas, então vale conferir no vídeo.
+
+Formato de cada item:
+Question: pergunta do avaliador, em inglês.
+Pergunta: a mesma pergunta traduzida para o português.
+Resposta: a justificativa esperada.
+
+==================================================
+
+1. "disrupted" (0:00)
+
+Question: At about 0 minutes 0 seconds, how did you translate "disrupted" in "the disrupted global order"? Justify your answer.
+
+Pergunta: Por volta de 0min00s, como você traduziu "disrupted" em "the disrupted global order"? Justifique a sua resposta.
+
+Resposta: Traduzi por "ordem global abalada". Descartei "disruptiva" porque, em português, o termo remete a inovação ("modelo disruptivo") e costuma ter conotação positiva ou neutra, o oposto do que a apresentadora quer dizer. "Abalada" transmite a ideia de uma ordem perturbada e instável. Em simultânea, a escolha precisa ser rápida, e "abalada" sai natural, sem soar a calque.
+
+--------------------------------------------------
+
+2. "taking heat" (0:25)
+
+Question: At about 0 minutes 25 seconds, how did you translate "taking heat" in "It's taking heat from its southern neighbor"? Justify your answer.
+
+Pergunta: Por volta de 0min25s, como você traduziu "taking heat" em "It's taking heat from its southern neighbor"? Justifique a sua resposta.
+
+Resposta: Traduzi por "está sob pressão do vizinho ao sul". "Take heat" é coloquial e abrange críticas, hostilidade e pressão. No contexto (tarifas, a ideia do 51º estado), "pressão" cobre tanto a crítica quanto a coerção econômica. "Sofrendo críticas" estreitaria o sentido. Já um equivalente coloquial como "levando bronca" destoaria do registro de uma entrevista econômica.
+
+--------------------------------------------------
+
+3. "central bank governor" (2:21)
+
+Question: At about 2 minutes 21 seconds, how did you translate "central bank governor" in "I was fortunate to be the central bank governor, as you say, in 2 G7 countries"? Justify your answer.
+
+Pergunta: Por volta de 2min21s, como você traduziu "central bank governor" em "I was fortunate to be the central bank governor, as you say, in 2 G7 countries"? Justifique a sua resposta.
+
+Resposta: Traduzi por "presidente do banco central". "Governador" é falso amigo, porque no Brasil remete ao chefe do Executivo estadual. Alguns veículos mantêm "governador" para o Banco da Inglaterra por tradição, e eu aceitaria essa opção se já fosse a forma usada, mas, na dúvida, "presidente" é o equivalente funcional e evita a confusão com o cargo estadual.
+
+--------------------------------------------------
+
+4. "stood" (3:24)
+
+Question: At about 3 minutes 24 seconds, how did you translate "stood" in "you stood because of President Trump, didn't you?" Justify your answer.
+
+Pergunta: Por volta de 3min24s, como você traduziu "stood" em "you stood because of President Trump, didn't you?" Justifique a sua resposta.
+
+Resposta: Traduzi por "você se candidatou". "Stand" tem vários sentidos em inglês, e aqui é o sentido britânico e da Commonwealth de concorrer a um cargo ("stand for election"). O contexto desambigua: na mesma fala, ela diz que ele anunciou a decisão pouco antes da posse. Evitei "posicionar-se" e "apresentar-se", que não indicam candidatura.
+
+--------------------------------------------------
+
+5. "stand by" (5:50)
+
+Question: At about 5 minutes 50 seconds, how did you translate "stand by" in "I stand by my earlier statement"? Justify your answer.
+
+Pergunta: Por volta de 5min50s, como você traduziu "stand by" em "I stand by my earlier statement"? Justifique a sua resposta.
+
+Resposta: Traduzi por "mantenho a minha afirmação anterior". "Stand by" aqui é sustentar o que se disse. Um calque como "posicionar-me ao lado da minha afirmação" não funciona em português. Alternativas aceitáveis seriam "reafirmo o que disse" ou "continuo defendendo". Escolhi "mantenho" por ser neutra e curta, o que ajuda em simultânea.
+
+--------------------------------------------------
+
+6. "know the score" (6:47)
+
+Question: At about 6 minutes 47 seconds, how did you translate "know the score" in "Whereas here, you know the score"? Justify your answer.
+
+Pergunta: Por volta de 6min47s, como você traduziu "know the score" em "Whereas here, you know the score"? Justifique a sua resposta.
+
+Resposta: Traduzi por "você sabe como as coisas estão". É uma expressão de origem esportiva que significa conhecer a situação real. Dizer "você sabe o placar" é um calque que não é idiomático em português e soaria estranho. Mantive o sentido e perdi a imagem esportiva, o que é uma perda aceitável, porque não há equivalente natural que preserve a metáfora.
+
+--------------------------------------------------
+
+7. "bully" (9:17)
+
+Question: At about 9 minutes 17 seconds, how did you translate "bully" and "stand up to" in "We're going to stand up to a bully. We're not going to back down"? Justify your answer.
+
+Pergunta: Por volta de 9min17s, como você traduziu "bully" e "stand up to" em "We're going to stand up to a bully. We're not going to back down"? Justifique a sua resposta.
+
+Resposta: "Vamos enfrentar um valentão. Não vamos recuar." "Valentão" é quem intimida os mais fracos, que é o sentido de "bully", e é a escolha mais comum na imprensa brasileira para esse uso. "Brigão" desloca para quem gosta de brigar. "Tirano" e "agressor" são mais fortes e formais do que o original. "Enfrentar" preserva a ideia de resistir, sem forçar um calque de "levantar-se contra".
+
+--------------------------------------------------
+
+8. "digital services tax" (10:29)
+
+Question: At about 10 minutes 29 seconds, how did you translate "digital services tax" in "your digital services tax"? Justify your answer.
+
+Pergunta: Por volta de 10min29s, como você traduziu "digital services tax" em "your digital services tax"? Justifique a sua resposta.
+
+Resposta: Traduzi por "imposto sobre serviços digitais". No direito tributário brasileiro, "taxa" tem sentido técnico (tributo vinculado a um serviço público ou ao poder de polícia). "Imposto" é o tributo sem contraprestação específica, que é o caso de uma cobrança sobre receitas de serviços digitais. "Taxa" aparece informalmente na imprensa, mas, diante de um público especializado, optei pelo termo tecnicamente preciso.
+
+--------------------------------------------------
+
+9. "wasn't having it" (10:40)
+
+Question: At about 10 minutes 40 seconds, how did you translate "wasn't having it" in "President Trump wasn't having it"? Justify your answer.
+
+Pergunta: Por volta de 10min40s, como você traduziu "wasn't having it" em "President Trump wasn't having it"? Justifique a sua resposta.
+
+Resposta: Traduzi por "o presidente Trump não ia tolerar isso". "Not having it" é uma expressão informal (de origem britânica) que significa recusar-se a aceitar. O literal ("não estava tendo isso") não faria sentido. "Não ia tolerar" mantém o tom coloquial e a ideia de recusa firme.
+
+--------------------------------------------------
+
+10. "executive order" (10:49)
+
+Question: At about 10 minutes 49 seconds, how did you translate "executive order" in "formally confirmed in an executive order"? Justify your answer.
+
+Pergunta: Por volta de 10min49s, como você traduziu "executive order" em "formally confirmed in an executive order"? Justifique a sua resposta.
+
+Resposta: Traduzi por "ordem executiva". É um instrumento próprio do direito constitucional americano. O equivalente funcional mais próximo seria "decreto", mas "decreto" evoca o instrumento brasileiro e pode induzir a erro quanto à natureza e ao alcance do ato. "Ordem executiva" é a forma usada na imprensa e identifica claramente que se trata do ato americano.
+
+--------------------------------------------------
+
+11. "flooding the zone" (13:13)
+
+Question: At about 13 minutes 13 seconds, how did you translate "flooding the zone" in "the value of the term they would use is flooding the zone"? Justify your answer.
+
+Pergunta: Por volta de 13min13s, como você traduziu "flooding the zone" em "the value of the term they would use is flooding the zone"? Justifique a sua resposta.
+
+Resposta: Traduzi por "inundar a zona". A expressão é jargão da política americana (saturar a atenção pública com muitas ações simultâneas), e ele mesmo a apresenta como "o termo que eles usariam", ou seja, é uma expressão alheia que ele cita. Por isso optei pelo decalque, que o contexto explica logo em seguida ("fazer várias coisas ao mesmo tempo"). Uma tradução livre como "saturar o noticiário" perderia a imagem e o caráter de termo conhecido.
+
+--------------------------------------------------
+
+12. "flourish" (13:47)
+
+Question: At about 13 minutes 47 seconds, how did you translate "flourish" in "you signed it on camera with a flourish"? Justify your answer.
+
+Pergunta: Por volta de 13min47s, como você traduziu "flourish" em "you signed it on camera with a flourish"? Justifique a sua resposta.
+
+Resposta: Traduzi por "assinou diante das câmeras, com um floreio". "Floreio" mantém a imagem do gesto ornamental da assinatura, que é exatamente o que ela descreve. "Com pompa" ou "de forma teatral" explicitariam demais e acrescentariam um julgamento que o original não faz.
+
+--------------------------------------------------
+
+13. "performance" (13:54)
+
+Question: At about 13 minutes 54 seconds, how did you translate "performance" in "Have you learned an element of performance"? Justify your answer.
+
+Pergunta: Por volta de 13min54s, como você traduziu "performance" em "Have you learned an element of performance"? Justifique a sua resposta.
+
+Resposta: Traduzi por "um elemento de encenação". "Performance" é falso amigo aqui: "desempenho" estaria errado, porque ela fala de representar para o público e de ser visto fazendo o trabalho de determinado jeito, e não de eficiência. "Encenação" capta essa ideia de espetáculo.
+
+--------------------------------------------------
+
+14. "Coalition of the Willing" (15:35)
+
+Question: At about 15 minutes 35 seconds, how did you translate "Coalition of the Willing" in "You are part of the Coalition of the Willing"? Justify your answer.
+
+Pergunta: Por volta de 15min35s, como você traduziu "Coalition of the Willing" em "You are part of the Coalition of the Willing"? Justifique a sua resposta.
+
+Resposta: Traduzi por "Coalizão dos Dispostos". É o nome que a imprensa brasileira consolidou para essa aliança. "Coalizão de Voluntários" também circula. Como é o nome de uma iniciativa, mantenho a forma já corrente em vez de criar uma tradução própria, e "dispostos" preserva o sentido de "willing", quem se dispõe a agir.
+
+--------------------------------------------------
+
+15. "security backstops" (15:48)
+
+Question: At about 15 minutes 48 seconds, how did you translate "security backstops" in "offering the security backstops for the future"? Justify your answer.
+
+Pergunta: Por volta de 15min48s, como você traduziu "security backstops" em "offering the security backstops for the future"? Justifique a sua resposta.
+
+Resposta: Traduzi por "salvaguardas de segurança". "Backstop" é o mecanismo de última instância que impede o colapso. Evitei "garantias de segurança" porque essa já é uma expressão própria do vocabulário da área e poderia confundir. "Rede de proteção" também seria possível, mas "salvaguardas" é mais sóbrio e cabe no registro.
+
+--------------------------------------------------
+
+16. "ultimate backstop" (17:24)
+
+Question: At about 17 minutes 24 seconds, how did you translate "ultimate backstop" and "some form of backstop" in "the ultimate backstop does need to have some form of backstop, of the United States"? Justify your answer.
+
+Pergunta: Por volta de 17min24s, como você traduziu "ultimate backstop" e "some form of backstop" em "the ultimate backstop does need to have some form of backstop, of the United States"? Justifique a sua resposta.
+
+Resposta: Traduzi por "a salvaguarda final precisa ter alguma forma de respaldo dos Estados Unidos". O original repete "backstop" na mesma frase, e repetir "salvaguarda" duas vezes seguidas soaria pesado em português, ainda mais ouvido em simultânea. Variei para "respaldo", que mantém o sentido de apoio de última instância. A variação foi consciente e não muda o conteúdo.
+
+--------------------------------------------------
+
+17. "off-ramps" (20:32)
+
+Question: At about 20 minutes 32 seconds, how did you translate "off-ramps" in "opportunities for Putin to take off-ramps"? Justify your answer.
+
+Pergunta: Por volta de 20min32s, como você traduziu "off-ramps" em "opportunities for Putin to take off-ramps"? Justifique a sua resposta.
+
+Resposta: Traduzi por "oportunidades para Putin pegar rotas de saída". É uma metáfora viária (saída de rodovia) para uma forma de recuar sem perder a face. Mantive a ideia de caminho alternativo, mas perdi a imagem da rodovia. "Saídas" seria mais genérico, e "vias de escape" sugere fuga. Usei "pegar" (e não "tomar") por ser o verbo mais natural com "saída", no registro de fala.
+
+--------------------------------------------------
+
+18. "snail's pace" (21:12)
+
+Question: At about 21 minutes 12 seconds, how did you translate "snail's pace" in "Russia has been moving at literally a snail's pace"? Justify your answer.
+
+Pergunta: Por volta de 21min12s, como você traduziu "snail's pace" em "Russia has been moving at literally a snail's pace"? Justifique a sua resposta.
+
+Resposta: Traduzi por "a Rússia tem avançado, literalmente, a passo de caracol". Preservei a imagem do original, e a expressão é compreensível e natural. Reconheço que "a passo de tartaruga" talvez seja mais frequente no Brasil. Mantive "caracol" por fidelidade à imagem, já que a diferença de naturalidade é pequena.
+
+--------------------------------------------------
+
+19. "game changer" (23:00)
+
+Question: At about 23 minutes 0 seconds, how did you translate "game changer" in "any sort of panacea, game changer"? Justify your answer.
+
+Pergunta: Por volta de 23min00s, como você traduziu "game changer" em "any sort of panacea, game changer"? Justifique a sua resposta.
+
+Resposta: Traduzi por "panaceia, divisor de águas". "Game changer" também circula em português como anglicismo, mas "divisor de águas" é o equivalente idiomático e mantém o registro formal da fala. Em simultânea, o equivalente em português é mais seguro, porque não depende de o público conhecer o termo em inglês.
+
+--------------------------------------------------
+
+20. "Does that stand" (24:03)
+
+Question: At about 24 minutes 3 seconds, how did you translate "stand" in "Does that stand under your leadership?" Justify your answer.
+
+Pergunta: Por volta de 24min03s, como você traduziu "stand" em "Does that stand under your leadership?" Justifique a sua resposta.
+
+Resposta: Traduzi por "isso se mantém sob a sua liderança?". Aqui "stand" é continuar valendo, permanecer em vigor, e se refere à promessa de cumprir os mandados de prisão. "Isso continua valendo na sua gestão?" também seria possível. O que evitei foi um calque como "isso se sustenta", que mudaria o sentido para algo como "isso se justifica".
+
+--------------------------------------------------
+
+21. "tragedy of the horizon" (24:35)
+
+Question: At about 24 minutes 35 seconds, how did you translate "tragedy of the horizon" in "Human frailties create a tragedy of the horizon"? Justify your answer.
+
+Pergunta: Por volta de 24min35s, como você traduziu "tragedy of the horizon" em "Human frailties create a tragedy of the horizon"? Justifique a sua resposta.
+
+Resposta: Traduzi por "tragédia do horizonte". É uma expressão consagrada, associada ao próprio Carney, e funciona como um conceito. Por isso uso a forma que o público já conhece, no singular, sem inventar variações. A tradução literal é também a corrente, então não há ganho em buscar outra.
+
+--------------------------------------------------
+
+22. "Dropping" (29:21)
+
+Question: At about 29 minutes 21 seconds, how did you translate "dropping" in "Dropping emissions" and the reply "Dropping the cap"? Justify your answer.
+
+Pergunta: Por volta de 29min21s, como você traduziu "dropping" em "Dropping emissions" e na réplica "Dropping the cap"? Justifique a sua resposta.
+
+Resposta: Traduzi por "derrubar" nas duas falas. O original joga com "drop" em dois sentidos (reduzir as emissões, abandonar o teto) em falas consecutivas. "Derrubar as emissões" e "derrubar o teto" funcionam nos dois sentidos em português e preservam o eco. "Reduzir" e "abandonar" estariam corretos isoladamente, mas desfariam o jogo.
+
+--------------------------------------------------
+
+23. "oil sands" (29:52)
+
+Question: At about 29 minutes 52 seconds, how did you translate "oil sands" in "What's required for the Canadian oil sands"? Justify your answer.
+
+Pergunta: Por volta de 29min52s, como você traduziu "oil sands" em "What's required for the Canadian oil sands"? Justifique a sua resposta.
+
+Resposta: Traduzi por "areias betuminosas canadenses". É a forma mais comum no Brasil para esse recurso. "Areias petrolíferas" também ocorre. Em inglês, "oil sands" é o termo usado pela indústria e pelo governo, em oposição a "tar sands", mais crítico, e o português não distingue os dois com a mesma facilidade. Mantive a forma corrente e neutra.
+
+--------------------------------------------------
+
+24. "fugitive methane flaring" (30:04)
+
+Question: At about 30 minutes 4 seconds, how did you translate "fugitive methane flaring" in "so-called fugitive methane flaring"? Justify your answer.
+
+Pergunta: Por volta de 30min04s, como você traduziu "fugitive methane flaring" em "so-called fugitive methane flaring"? Justifique a sua resposta.
+
+Resposta: Traduzi por "o chamado metano fugitivo, a queima em tocha". "Emissões fugitivas" é termo técnico do setor de óleo e gás para vazamentos não intencionais, e "flaring" é "queima em tocha" (também se usa "flare"). Tecnicamente são fontes distintas, e o falante as junta numa expressão só. Em simultânea, acompanho o que ele diz, sem tentar corrigir ou esclarecer além do que foi dito.
+
+--------------------------------------------------
+
+25. "run economies down" (33:12)
+
+Question: At about 33 minutes 12 seconds, how did you translate "run economies down" in "They know how to talk about it, but they know how to run economies down"? Justify your answer.
+
+Pergunta: Por volta de 33min12s, como você traduziu "run economies down" em "They know how to talk about it, but they know how to run economies down"? Justifique a sua resposta.
+
+Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa deteriorar, levar ao declínio. Carney devolve a expressão que a entrevistadora acabou de usar ("run economies", administrar economias) acrescentando "down", e isso cria um jogo de palavras. Em português, "administrar" e "arruinar" não ecoam um ao outro, então perco o eco. Em simultânea, priorizo o sentido e a naturalidade. Se houvesse tempo, "sabem é levar economias à ruína" soaria mais enfático.</script>
+
+    <script>
+        // ================= CONFIGURAÇÃO (é só aqui que se mexe) =================
+        const CONFIG = {
+            youtubeId: "hh9LsnE0hA0",          // ID do vídeo no YouTube: a parte depois de "v=" no link (ex.: https://www.youtube.com/watch?v=ABCDEFGHIJK -> "ABCDEFGHIJK")
+            mp4Url: "",             // alternativa ao YouTube: link ou caminho de um .mp4 (ex.: "video/carney.mp4"). Se estiver preenchido, vale mais que o YouTube
+            offsetSeconds: 0,       // se o vídeo tiver alguns segundos a mais ou a menos no começo do que o arquivo que foi transcrito, ajuste aqui (positivo = o vídeo começa mais tarde)
+            extraPauseSeconds: 5    // folga depois do fim do turno antes da pausa automática
+        };
+        // Para testar sem editar o arquivo: ?v=ID_DO_YOUTUBE, ?mp4=URL e ?offset=SEGUNDOS no endereço da página
+        (function () {
+            const qs = new URLSearchParams(location.search);
+            if (qs.get('v')) CONFIG.youtubeId = qs.get('v');
+            if (qs.get('mp4')) CONFIG.mp4Url = qs.get('mp4');
+            if (qs.get('offset') && !isNaN(Number(qs.get('offset')))) CONFIG.offsetSeconds = Number(qs.get('offset'));
+        })();
+
+        const $ = id => document.getElementById(id);
+        const pad = n => String(n).padStart(2, '0');
+        function esc(str) { return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+        // Liga/desliga um elemento trocando "hidden" pela classe de exibição que ele usa
+        function show(el, on, disp = 'flex') { if (!el) return; el.classList.toggle('hidden', !on); el.classList.toggle(disp, on); }
+
+        function fmtShort(sec) {
+            sec = Math.max(0, Math.floor(sec));
+            const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+            return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+        }
+        function fmtHMS(sec) { sec = Math.max(0, Math.floor(sec)); return `${pad(Math.floor(sec / 3600))}:${pad(Math.floor((sec % 3600) / 60))}:${pad(sec % 60)}`; }
+        function parseVideoTime(str) {
+            const m = String(str ?? '').trim().match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/);
+            if (!m) return null;
+            const h = m[1] ? Number(m[1]) : 0, mi = Number(m[2]), s = Number(m[3]);
+            if (mi > 59 || s > 59) return null;
+            return h * 3600 + mi * 60 + s;
+        }
+        function prettyName(raw) { return String(raw ?? '').replace(/\S+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+        function getAvatarColors(name) {
+            let h = 2166136261;
+            const s = String(name || '').toLowerCase().trim();
+            for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+            h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+            const hue = (h >>> 0) % 360;
+            return { bg: `hsl(${hue}, 70%, 85%)`, text: `hsl(${hue}, 80%, 25%)`, bgD: `hsl(${hue}, 42%, 32%)`, textD: `hsl(${hue}, 80%, 92%)` };
+        }
+
+        function showAlert(message, isError = false, durationMs = 4000) {
+            const existing = $('custom-alert');
+            if (existing) existing.remove();
+            const box = document.createElement('div');
+            box.id = 'custom-alert';
+            box.className = `${isError ? 'alert-error ' : ''}fixed bottom-6 right-6 max-w-md ${isError ? 'bg-red-600' : 'bg-slate-900'} text-white text-xs px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all`;
+            const span = document.createElement('span'); span.textContent = message;
+            const close = document.createElement('button');
+            close.className = 'text-slate-400 hover:text-white ml-2 font-bold'; close.textContent = '×';
+            close.addEventListener('click', () => box.remove());
+            box.append(span, close);
+            document.body.appendChild(box);
+            setTimeout(() => { if (document.body.contains(box)) box.remove(); }, durationMs);
+        }
+
+        // ================= Dados =================
+        function parseTranscript(text, label) {
+            const safe = '<root>' + String(text).trim().replace(/^\s*<\?xml[^>]*\?>/, '').replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;') + '</root>';
+            const doc = new DOMParser().parseFromString(safe, 'text/xml');
+            if (doc.querySelector('parsererror')) throw new Error(`A transcrição em ${label} não é um XML válido.`);
+            return Array.from(doc.querySelectorAll('u')).map(u => ({
+                who: (u.getAttribute('who') || '').trim(),
+                start: parseVideoTime(u.getAttribute('video_time')),
+                text: u.textContent.replace(/\s+/g, ' ').trim()
+            })).filter(x => x.start !== null);
+        }
+        // Junta inglês e português turno a turno (os dois XMLs têm os mesmos horários); se algum horário não bater, alinha pelo horário
+        function pairTurns(en, pt) {
+            const same = en.length === pt.length && en.every((e, i) => e.start === pt[i].start);
+            if (same) return { rows: en.map((e, i) => ({ who: e.who, start: e.start, en: e.text, pt: pt[i].text })), same: true };
+            const byTime = new Map();
+            pt.forEach(p => { if (!byTime.has(p.start)) byTime.set(p.start, []); byTime.get(p.start).push(p); });
+            const rows = en.map(e => { const q = byTime.get(e.start); const p = q && q.length ? q.shift() : null; return { who: e.who, start: e.start, en: e.text, pt: p ? p.text : '' }; });
+            byTime.forEach(q => q.forEach(p => rows.push({ who: p.who, start: p.start, en: '', pt: p.text })));
+            rows.sort((a, b) => a.start - b.start);
+            return { rows, same: false };
+        }
+        function parseQuestions(text) {
+            const re = /^[ \t]*(\d+)\.\s+[“"](.+?)[”"]\s+\((\d+):(\d{2})(?::(\d{2}))?\)[ \t]*$/gm;
+            const heads = []; let m;
+            while ((m = re.exec(text)) !== null) heads.push({ n: Number(m[1]), expr: m[2].trim(), a: m[3], b: m[4], c: m[5], from: m.index, to: re.lastIndex });
+            const out = [];
+            heads.forEach((h, i) => {
+                const block = text.slice(h.to, i + 1 < heads.length ? heads[i + 1].from : text.length);
+                const f = /Question:\s*([\s\S]*?)\s*\n\s*Pergunta:\s*([\s\S]*?)\s*\n\s*Resposta:\s*([\s\S]*?)\s*(?:\n\s*[-=]{5,}[\s\S]*)?$/.exec(block);
+                if (!f) return;
+                const t = h.c !== undefined ? Number(h.a) * 3600 + Number(h.b) * 60 + Number(h.c) : Number(h.a) * 60 + Number(h.b);
+                out.push({ n: h.n, expr: h.expr, t, q: f[1].trim(), pt: f[2].trim(), ans: f[3].trim() });
+            });
+            return out;
+        }
+
+        let turns = [], starts = [], questions = [];
+        try {
+            const res = pairTurns(parseTranscript($('data-en').textContent, 'inglês'), parseTranscript($('data-pt').textContent, 'português'));
+            turns = res.rows;
+            if (!res.same) showAlert('As duas transcrições não têm exatamente os mesmos turnos e horários: foram alinhadas pelo horário. Vale conferir.', true, 12000);
+        } catch (err) { showAlert(err.message, true, 15000); }
+        try { questions = parseQuestions($('data-questions').textContent); } catch (err) { showAlert('Não foi possível ler as perguntas.', true, 15000); }
+        starts = turns.map(t => t.start);
+
+        // ================= Player (YouTube ou .mp4) =================
+        const player = {
+            kind: null, yt: null, ready: false, v: null,
+            available() { return this.kind === 'mp4' || (this.kind === 'yt' && this.ready); },
+            getTime() { try { if (this.kind === 'mp4') return this.v.currentTime; if (this.kind === 'yt' && this.ready) return this.yt.getCurrentTime(); } catch (e) {} return null; },
+            seek(t) { if (this.kind === 'mp4') this.v.currentTime = t; else this.yt.seekTo(t, true); },
+            play() { if (this.kind === 'mp4') this.v.play().catch(() => {}); else this.yt.playVideo(); },
+            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); }
+        };
+        function videoMessage(html) { const el = $('video-msg'); el.innerHTML = html; show(el, true); }
+        const YT_ERRORS = {
+            2: 'O ID do vídeo parece inválido.',
+            5: 'O navegador não conseguiu reproduzir este vídeo.',
+            100: 'O vídeo não foi encontrado (apagado ou privado).',
+            101: 'O dono do vídeo não permite que ele seja incorporado em outros sites.',
+            150: 'O dono do vídeo não permite que ele seja incorporado em outros sites.',
+            153: 'O YouTube não aceitou abrir o vídeo aqui. Isso acontece quando a página é aberta direto do computador (file://): publique no GitHub Pages ou abra por um servidor local.'
+        };
+        function loadYouTube() {
+            window.onYouTubeIframeAPIReady = function () {
+                const vars = { rel: 0, playsinline: 1, modestbranding: 1 };
+                if (location.protocol.indexOf('http') === 0) vars.origin = location.origin;
+                player.yt = new YT.Player('yt-host', {
+                    videoId: CONFIG.youtubeId, width: '100%', height: '100%', playerVars: vars,
+                    events: {
+                        onReady: () => { player.ready = true; },
+                        onError: e => videoMessage((YT_ERRORS[e.data] || 'Erro ao carregar o vídeo.') + `<br><br><a href="https://www.youtube.com/watch?v=${encodeURIComponent(CONFIG.youtubeId)}" target="_blank" rel="noopener">Abrir no YouTube</a>`)
+                    }
+                });
+            };
+            const tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            tag.onerror = () => videoMessage('Não foi possível carregar o player do YouTube. Verifique a conexão com a internet.');
+            document.head.appendChild(tag);
+        }
+        function initPlayer() {
+            if (CONFIG.mp4Url) {
+                player.kind = 'mp4'; player.v = $('html5');
+                show($('yt-host'), false); show(player.v, true, 'block');
+                player.v.addEventListener('error', () => videoMessage('Não foi possível carregar o arquivo de vídeo. Confira o endereço em CONFIG.mp4Url.'));
+                player.v.src = CONFIG.mp4Url;
+            } else if (CONFIG.youtubeId) {
+                player.kind = 'yt'; loadYouTube();
+            } else {
+                videoMessage('Vídeo ainda não configurado.<br>No começo do script deste arquivo, preencha <b>youtubeId</b> em CONFIG<br>(ou use <b>?v=ID</b> no endereço da página).');
+            }
+        }
+
+        // ================= Turnos: qual está tocando, onde termina =================
+        // Devolve [primeiro, último] dos turnos ativos em t (turnos com o mesmo horário contam juntos), ou null antes do primeiro
+        function turnRange(t) {
+            if (!starts.length || t < starts[0]) return null;
+            let a = 0, b = starts.length - 1;
+            while (a < b) { const m = (a + b + 1) >> 1; if (starts[m] <= t) a = m; else b = m - 1; }
+            let lo = a; while (lo > 0 && starts[lo - 1] === starts[a]) lo--;
+            return [lo, a];
+        }
+        function turnEnd(i) { const s = starts[i]; for (let j = i + 1; j < starts.length; j++) if (starts[j] > s) return starts[j]; return s + 10; }
+        const norm = s => String(s ?? '').toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
+        // O horário das perguntas aponta um pouco antes da expressão: procura a expressão no turno desse horário e nos seguintes
+        function pauseTimeFor(t, expr) {
+            const r = turnRange(t);
+            const first = r ? r[0] : 0;
+            let idx = first;
+            const needle = norm(expr);
+            if (needle) for (let k = first; k < Math.min(turns.length, first + 6); k++) {
+                if (norm(turns[k].en).includes(needle)) { idx = k; break; }
+                // expressão cortada entre dois turnos (ex.: "wasn't having" / "it."): vale o turno em que ela termina
+                if (k + 1 < turns.length && norm(turns[k].en + ' ' + turns[k + 1].en).includes(needle)) { idx = k + 1; break; }
+            }
+            return turnEnd(idx) + CONFIG.extraPauseSeconds;
+        }
+
+        // ================= Pausa automática =================
+        let ap = null;   // { from, stop, armed, at }
+        function paintAP() {
+            if (!ap) { show($('ap-card'), false); return; }
+            $('ap-text').textContent = `Pausa automática em ${fmtShort(ap.stop)} (fim do turno + ${CONFIG.extraPauseSeconds} s)`;
+            show($('ap-card'), true);
+        }
+        function clearAP() { ap = null; paintAP(); }
+        function playFrom(t, expr) {
+            if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando. Tente de novo em um instante.' : 'O vídeo ainda não foi configurado.', true); return; }
+            ap = { from: t, stop: pauseTimeFor(t, expr), armed: false, at: performance.now() };
+            paintAP();
+            player.seek(t + CONFIG.offsetSeconds);
+            player.play();
+        }
+        $('ap-cancel').addEventListener('click', clearAP);
+
+        // ================= Transcrições =================
+        let activeKey = null, activeLo = -1, follow = true, mode = 'transcripts';
+        function buildTranscript() {
+            const head = `<div class="sticky top-0 z-10 bg-slate-50 pt-3 pb-1 px-1"><div class="cols text-[11px] font-bold uppercase tracking-wider text-slate-500"><div class="col-en">English</div><div class="col-pt">Português</div></div></div>`;
+            $('transcript-container').innerHTML = head + turns.map((t, i) => {
+                const av = getAvatarColors(t.who), name = prettyName(t.who);
+                const box = (cls, tag, text) => `<div class="box ${cls} bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border border-black/5 avatar-dyn" style="background-color: ${av.bg}; color: ${av.text}; --av-bg-d: ${av.bgD}; --av-fg-d: ${av.textD};">${esc(name.charAt(0))}</div>
+                            <span class="font-bold text-sm text-slate-800 truncate">${esc(name)}</span>
+                            <span class="shrink-0 text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">${fmtHMS(t.start)}</span>
+                            <span class="ml-auto shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">${tag}</span>
+                        </div>
+                        <p class="text-sm leading-relaxed text-slate-700 m-0">${esc(text)}</p>
+                    </div>`;
+                return `<div class="utterance cols cursor-pointer mb-3" id="turn-${i}" data-i="${i}" data-text="${esc((t.who + ' ' + t.en + ' ' + t.pt).toLowerCase())}">
+                    ${box('col-en', 'EN', t.en)}
+                    ${box('col-pt', 'PT', t.pt)}
+                </div>`;
+            }).join('');
+            $('utterance-count').textContent = `${turns.length} turnos`;
+        }
+        function scrollToCard(el, smooth) {
+            if (!el || !el.offsetParent) return;
+            const c = $('transcript-container'), cr = c.getBoundingClientRect(), er = el.getBoundingClientRect();
+            const target = c.scrollTop + (er.top - cr.top) - (c.clientHeight / 2 - er.height / 2);
+            c.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'auto' });
+        }
+        function updateActive(t) {
+            const r = turnRange(t);
+            const key = r ? r[0] + '-' + r[1] : null;
+            if (key === activeKey) return;
+            activeKey = key; activeLo = -1;
+            document.querySelectorAll('#transcript-container .utterance.active').forEach(e => e.classList.remove('active'));
+            if (!r) return;
+            for (let i = r[0]; i <= r[1]; i++) { const el = $('turn-' + i); if (el) el.classList.add('active'); }
+            activeLo = r[0];
+            if (follow && mode === 'transcripts') scrollToCard($('turn-' + r[0]), true);
+        }
+        $('transcript-container').addEventListener('click', e => {
+            const card = e.target.closest('.utterance');
+            if (!card) return;
+            if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando.' : 'O vídeo ainda não foi configurado.', true); return; }
+            clearAP();
+            player.seek(turns[Number(card.dataset.i)].start + CONFIG.offsetSeconds + 0.01);
+            player.play();
+        });
+        $('search-input').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase().trim();
+            let n = 0;
+            document.querySelectorAll('#transcript-container .utterance').forEach(el => {
+                const ok = !q || el.dataset.text.includes(q);
+                el.classList.toggle('hidden', !ok);
+                if (ok) n++;
+            });
+            $('utterance-count').textContent = `${n} turnos`;
+        });
+        const SW_ON = 'text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm';
+        const SW_OFF = 'text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700';
+        function setLang(l) {
+            const c = $('transcript-container');
+            c.classList.remove('lang-both', 'lang-en', 'lang-pt'); c.classList.add('lang-' + l);
+            document.querySelectorAll('#lang-switch button').forEach(b => { b.className = b.dataset.lang === l ? SW_ON : SW_OFF; });
+            if (activeLo >= 0) scrollToCard($('turn-' + activeLo), false);
+        }
+        $('lang-switch').addEventListener('click', e => { const b = e.target.closest('button[data-lang]'); if (b) setLang(b.dataset.lang); });
+        function paintFollow() {
+            const b = $('follow-btn');
+            b.setAttribute('aria-pressed', String(follow));
+            b.className = 'shrink-0 text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm ' + (follow ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50');
+        }
+        $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow && activeLo >= 0) scrollToCard($('turn-' + activeLo), true); });
+
+        // ================= Perguntas =================
+        let qIdx = 0;
+        const revealed = new Set();
+        const PLAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>';
+        function timeBtnInline(label, sec) {
+            return `<button type="button" data-t="${sec}" class="font-semibold text-indigo-700 hover:text-indigo-900 underline decoration-dotted underline-offset-2 cursor-pointer" title="Ouvir o trecho no vídeo">${label}</button>`;
+        }
+        // Transforma "0 minutes 25 seconds" e "0min25s" dentro do texto em botões que tocam o vídeo naquele ponto
+        function withTimeButtons(raw) {
+            return esc(raw)
+                .replace(/(\d+)\s+minutes?\s+(\d+)\s+seconds?/gi, (m, a, b) => timeBtnInline(m, Number(a) * 60 + Number(b)))
+                .replace(/(\d+)\s*min\s*(\d{1,2})\s*s\b/gi, (m, a, b) => timeBtnInline(m, Number(a) * 60 + Number(b)));
+        }
+        const LABEL = 'text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1';
+        function renderNav() {
+            $('q-nav').innerHTML = questions.map((q, i) => {
+                const cur = i === qIdx, seen = revealed.has(i);
+                const cls = cur ? 'bg-indigo-600 text-white border-indigo-300'
+                    : seen ? 'bg-emerald-100 text-emerald-800 border-slate-200 hover:bg-emerald-200'
+                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
+                return `<button type="button" data-q="${i}" class="w-8 h-8 rounded-lg text-xs font-bold border transition-colors ${cls}" ${cur ? 'aria-current="true"' : ''}>${q.n}</button>`;
+            }).join('');
+            $('q-progress').textContent = `Pergunta ${questions.length ? qIdx + 1 : 0} de ${questions.length}`;
+            $('q-prev').disabled = qIdx <= 0;
+            $('q-next').disabled = qIdx >= questions.length - 1;
+        }
+        function renderQuestion(keepScroll) {
+            const body = $('q-body'), prevTop = body.scrollTop;
+            const q = questions[qIdx];
+            if (!q) { body.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">Nenhuma pergunta carregada.</p>'; return; }
+            const open = revealed.has(qIdx);
+            const TAG_EN = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
+            const TAG_PT = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-indigo-700 border border-indigo-200';
+            body.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <div class="flex flex-wrap items-center gap-3 mb-5">
+                        <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">${q.n}</span>
+                        <span class="font-bold text-base text-slate-800">&ldquo;${esc(q.expr)}&rdquo;</span>
+                        <button type="button" data-t="${q.t}" class="inline-flex items-center gap-1.5 font-mono text-xs bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2.5 py-1 rounded-lg font-semibold shadow-sm" title="Ouvir o trecho (pausa sozinho depois do turno)">${PLAY_ICON}${fmtShort(q.t)}</button>
+                        <span class="ml-auto ${TAG_EN}">EN</span>
+                    </div>
+                    <div class="${LABEL}">Question</div>
+                    <p class="text-base leading-relaxed text-slate-700 m-0">${withTimeButtons(q.q)}</p>
+                    <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <button id="reveal-btn" type="button" class="${open ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} font-semibold text-xs py-1.5 px-3 rounded-lg transition-colors shadow-sm">${open ? 'Esconder tradução e resposta' : 'Mostrar tradução e resposta'}</button>
+                        ${open ? '' : '<span class="text-xs text-slate-500">Pense na sua resposta antes de abrir.</span>'}
+                    </div>
+                </div>
+                ${open ? `<div class="mt-4 bg-white border border-indigo-200 rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div class="${LABEL} mb-0">Pergunta</div>
+                        <span class="${TAG_PT}">PT</span>
+                    </div>
+                    <p class="text-base leading-relaxed text-slate-700 m-0">${withTimeButtons(q.pt)}</p>
+                    <div class="${LABEL} mt-5">Resposta</div>
+                    <p class="text-base leading-relaxed text-slate-700 m-0">${esc(q.ans)}</p>
+                </div>` : ''}`;
+            body.scrollTop = keepScroll ? prevTop : 0;
+        }
+        function gotoQuestion(i) {
+            if (i < 0 || i >= questions.length) return;
+            qIdx = i; renderNav(); renderQuestion(false);
+        }
+        $('q-nav').addEventListener('click', e => { const b = e.target.closest('button[data-q]'); if (b) gotoQuestion(Number(b.dataset.q)); });
+        $('q-prev').addEventListener('click', () => gotoQuestion(qIdx - 1));
+        $('q-next').addEventListener('click', () => gotoQuestion(qIdx + 1));
+        $('q-body').addEventListener('click', e => {
+            const tb = e.target.closest('[data-t]');
+            if (tb) { const q = questions[qIdx]; playFrom(Number(tb.dataset.t), q && q.expr); return; }
+            if (e.target.closest('#reveal-btn')) {
+                if (revealed.has(qIdx)) revealed.delete(qIdx); else revealed.add(qIdx);
+                renderNav(); renderQuestion(true);
+            }
+        });
+        document.addEventListener('keydown', e => {
+            if (mode !== 'questions' || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''))) return;
+            if (e.key === 'ArrowRight') gotoQuestion(qIdx + 1);
+            else if (e.key === 'ArrowLeft') gotoQuestion(qIdx - 1);
+        });
+
+        // ================= Modo (transcrições / perguntas) =================
+        function setMode(m) {
+            mode = m;
+            $('main').dataset.mode = m;
+            show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions');
+            $('mode-transcripts').className = m === 'transcripts' ? SW_ON : SW_OFF;
+            $('mode-questions').className = m === 'questions' ? SW_ON : SW_OFF;
+            $('mode-transcripts').setAttribute('aria-pressed', String(m === 'transcripts'));
+            $('mode-questions').setAttribute('aria-pressed', String(m === 'questions'));
+            if (m === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
+        }
+        $('mode-transcripts').addEventListener('click', () => setMode('transcripts'));
+        $('mode-questions').addEventListener('click', () => setMode('questions'));
+
+        // ================= Vídeo: botões e o relógio que move tudo junto =================
+        $('skip-back-btn').addEventListener('click', () => { const t = player.getTime(); if (t != null) player.seek(Math.max(0, t - 5)); });
+        $('skip-forward-btn').addEventListener('click', () => { const t = player.getTime(); if (t != null) player.seek(t + 5); });
+        function tick() {
+            const vt = player.getTime();
+            if (vt == null) return;
+            const t = vt - CONFIG.offsetSeconds;
+            updateActive(t);
+            if (!ap) return;
+            if (!ap.armed) {
+                // espera o vídeo chegar de fato ao ponto pedido (o pulo do YouTube leva um instante)
+                if (t >= ap.from - 1 && t <= ap.stop) ap.armed = true;
+                else if (performance.now() - ap.at > 4000) clearAP();
+            } else if (t >= ap.stop) {
+                if (t < ap.stop + 2) { player.pause(); showAlert('Pausa automática: o trecho terminou.'); }
+                clearAP();
+            } else if (t < ap.from - 2) {
+                clearAP();   // a pessoa voltou o vídeo por conta própria
+            }
+        }
+        setInterval(tick, 200);
+
+        // ================= Tema escuro =================
+        (function () {
+            const KEY = 'translationPracticeTheme';
+            const root = document.documentElement, btn = $('theme-btn');
+            const mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+            const hasSaved = () => { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } };
+            function paint() {
+                const dark = root.classList.contains('dark');
+                const label = dark ? 'Mudar para o modo claro' : 'Mudar para o modo escuro';
+                btn.setAttribute('aria-pressed', String(dark)); btn.setAttribute('aria-label', label); btn.title = label;
+            }
+            btn.addEventListener('click', () => {
+                const dark = !root.classList.contains('dark');
+                root.classList.toggle('dark', dark);
+                try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch (e) {}
+                paint();
+            });
+            if (mq) {
+                const follow = e => { if (!hasSaved()) { root.classList.toggle('dark', e.matches); paint(); } };
+                if (mq.addEventListener) mq.addEventListener('change', follow); else if (mq.addListener) mq.addListener(follow);
+            }
+            paint();
+        })();
+
+        // ================= Início =================
+        buildTranscript(); paintFollow();
+        renderNav(); renderQuestion(false);
+        setMode('transcripts');
+        initPlayer();
+
+        if (typeof tailwind === 'undefined') showAlert('O arquivo de estilo (tailwind.js) não foi encontrado e não há internet para buscá-lo: a página vai aparecer sem o layout.', true, 600000);
+    </script>
+</body>
+</html>
