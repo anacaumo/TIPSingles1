@@ -26,7 +26,6 @@
         .utterance.hidden { display: none; }
         /* tamanho da letra (controle A− / A+ no cabeçalho) */
         .txt { font-size: calc(.875rem * var(--fs, 1)); line-height: 1.625; }
-        .txt-lg { font-size: calc(1rem * var(--fs, 1)); line-height: 1.625; }
         /* cada falante tem a sua cor no box */
         .box.sp { background-color: var(--sp-bg); border-left: 4px solid var(--sp-bd); }
         html.dark .box.sp { background-color: var(--sp-bgd); border-left-color: var(--sp-bdd); }
@@ -1240,11 +1239,11 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     <div class="flex flex-wrap items-center gap-3 mb-5">
                         <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">${q.n}</span>
-                        <span class="font-bold text-base text-slate-800">&ldquo;${esc(q.expr)}&rdquo;</span>
+                        <span class="font-semibold text-[15px] text-slate-800">&ldquo;${esc(q.expr)}&rdquo;</span>
                         <button type="button" data-t="${q.t}" class="inline-flex items-center gap-1.5 font-mono text-xs bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2.5 py-1 rounded-lg font-semibold shadow-sm" title="Ir para este ponto do vídeo">${PLAY_ICON}${fmtShort(q.t)}</button>
                     </div>
                     <div class="${LABEL}">Question</div>
-                    <p class="txt-lg text-slate-700 m-0">${withTimeButtons(q.q)}</p>
+                    <p class="txt text-slate-700 m-0">${withTimeButtons(q.q)}</p>
                     <div class="mt-6 flex flex-wrap items-center gap-3">
                         <button id="reveal-btn" type="button" class="${open ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} font-semibold text-xs py-1.5 px-3 rounded-lg transition-colors shadow-sm">${open ? 'Esconder tradução e resposta' : 'Mostrar tradução e resposta'}</button>
                         <button id="ctx-btn" type="button" aria-expanded="${ctx}" class="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50">${ctx ? 'Esconder trecho' : 'Ver trecho da transcrição'}</button>
