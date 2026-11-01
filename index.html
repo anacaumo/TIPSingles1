@@ -48,6 +48,9 @@
         #skip-row { display: contents; }
         #skip-back-btn { order: 0; } #video-box { order: 1; } #skip-forward-btn { order: 2; }
         #splitter { touch-action: none; }
+        /* trecho da transcrição abaixo do vídeo (modo perguntas) */
+        #ctx-panel { display: none; flex-direction: column; min-height: 0; max-height: 40vh; }
+        main[data-mode="questions"] #ctx-panel.open { display: flex; }
         /* modo "só vídeo": sem transcrições nem perguntas, o vídeo ocupa a página */
         main[data-mode="video"] #video-section { flex: 1 1 auto; justify-content: center; }
         main[data-mode="video"] #video-box { height: min(calc(100vh - 9rem), calc((100vw - 10rem) * 9 / 16)); }
@@ -61,6 +64,7 @@
         @media (min-width: 900px) {
             main[data-mode="questions"] { flex-direction: row; }
             main[data-mode="questions"] #video-section { width: 44%; min-width: 380px; align-items: stretch; justify-content: flex-start; padding: 1.5rem; overflow-y: auto; border-bottom-width: 0; border-right-width: 1px; }
+            main[data-mode="questions"] #ctx-panel { flex: 1 1 0; min-height: 200px; max-height: none; }
             main[data-mode="questions"] #video-wrapper { width: 100%; flex-direction: column; align-items: center; gap: .5rem; }
             main[data-mode="questions"] #skip-row { display: flex; justify-content: center; gap: .75rem; order: 2; }
             main[data-mode="questions"] #splitter { display: none; }
@@ -181,9 +185,13 @@
                     <button id="skip-forward-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">+5s</button>
                 </div>
             </div>
-            <div id="ap-card" class="hidden w-full max-w-xl items-center justify-between gap-3 bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded-lg px-3 py-2">
-                <span id="ap-text"></span>
-                <button id="ap-cancel" type="button" class="shrink-0 font-semibold underline underline-offset-2">Cancelar pausa</button>
+            <!-- Trecho da transcrição (modo perguntas): fica logo abaixo do vídeo -->
+            <div id="ctx-panel" class="w-full">
+                <div class="flex items-center justify-between gap-3 mb-2 shrink-0">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Trecho da transcrição <span class="normal-case tracking-normal font-semibold">(expressão e tradução destacadas)</span></div>
+                    <button id="ctx-close" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-700 underline underline-offset-2">Fechar</button>
+                </div>
+                <div id="ctx-body" class="relative flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
         </section>
 
@@ -225,7 +233,7 @@
                     </div>
                     <div id="q-nav" class="flex flex-wrap gap-1.5 pt-1"></div>
                     <div id="q-stats" class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 mt-3"></div>
-                    <p id="q-help" class="text-[11px] text-slate-500 mt-1">Clique no horário (no título ou no texto da pergunta) para ouvir o trecho; clicar de novo repete. O vídeo pausa sozinho 5 segundos depois que o turno de fala termina. Depois de abrir o gabarito, marque como foi: o número da pergunta ganha cor.</p>
+                    <p id="q-help" class="text-[11px] text-slate-500 mt-1">Clique no horário (no título ou no texto da pergunta) para ir àquele ponto do vídeo; clicar de novo repete. Depois de abrir o gabarito, marque como foi: o número da pergunta ganha cor.</p>
                 </div>
                 <div id="q-body" class="content-pad flex-1 overflow-y-auto py-4 custom-scrollbar bg-slate-50/50"></div>
                 <div class="content-pad border-t border-slate-200 bg-white py-3 flex justify-between items-center shrink-0">
@@ -704,8 +712,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         const CONFIG = {
             youtubeId: "hh9LsnE0hA0",          // ID do vídeo no YouTube: a parte depois de "v=" no link (ex.: https://www.youtube.com/watch?v=ABCDEFGHIJK -> "ABCDEFGHIJK")
             mp4Url: "",             // alternativa ao YouTube: link ou caminho de um .mp4 (ex.: "video/carney.mp4"). Se estiver preenchido, vale mais que o YouTube
-            offsetSeconds: 0,       // se o vídeo tiver alguns segundos a mais ou a menos no começo do que o arquivo que foi transcrito, ajuste aqui (positivo = o vídeo começa mais tarde)
-            extraPauseSeconds: 5    // folga depois do fim do turno antes da pausa automática
+            offsetSeconds: 0        // se o vídeo tiver alguns segundos a mais ou a menos no começo do que o arquivo que foi transcrito, ajuste aqui (positivo = o vídeo começa mais tarde)
         };
         // Para testar sem editar o arquivo: ?v=ID_DO_YOUTUBE, ?mp4=URL e ?offset=SEGUNDOS no endereço da página
         (function () {
@@ -863,7 +870,6 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             let lo = a; while (lo > 0 && starts[lo - 1] === starts[a]) lo--;
             return [lo, a];
         }
-        function turnEnd(i) { const s = starts[i]; for (let j = i + 1; j < starts.length; j++) if (starts[j] > s) return starts[j]; return s + 10; }
         const norm = s => String(s ?? '').toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
         // O horário das perguntas aponta um pouco antes da expressão: procura a expressão no turno desse horário e nos seguintes.
         // Devolve { from, idx }: o turno em que ela está (ou, se ela é cortada entre dois turnos, do primeiro ao segundo)
@@ -878,9 +884,12 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             }
             return { from: first, idx: first };
         }
-        function pauseTimeFor(t, expr) { return turnEnd(exprTurn(t, expr).idx) + CONFIG.extraPauseSeconds; }
         // ---- destaque de expressões ----
-        const patOf = str => String(str).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
+        // Padrão que ignora pontuação entre as palavras (vírgulas, aspas, ponto final...) e aceita ' ou ’
+        const SEP = '[\\s,;:.!?\u2026"\u201c\u201d\u2018\u2019\'\u2014\u2013-]+';
+        const patOf = str => String(str).trim().split(/\s+/)
+            .map(w => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')).filter(Boolean)
+            .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]")).join(SEP);
         // Acha `str` em `text`. Se `ratio` vier (posição relativa 0..1), entre várias ocorrências escolhe a mais próxima dessa posição
         function findMatch(text, str, ratio) {
             let re; try { re = new RegExp(patOf(str), 'gi'); } catch (e) { return null; }
@@ -892,6 +901,27 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 if (!best || d < best.d) best = { m, d };
             }
             return best ? best.m : null;
+        }
+        function markRanges(text, ranges) {   // ranges: [[inicio, fim], ...], sem sobreposição
+            let out = '', pos = 0;
+            ranges.slice().sort((a, b) => a[0] - b[0]).forEach(([a, b]) => { out += esc(text.slice(pos, a)) + '<mark class="expr-mark">' + esc(text.slice(a, b)) + '</mark>'; pos = b; });
+            return out + esc(text.slice(pos));
+        }
+        // Gabarito que resume a frase da transcrição (ex.: sem um aparte no meio): destaca o começo e o fim que aparecem no texto
+        function partialRanges(text, str, ratio) {
+            const words = String(str).trim().split(/\s+/);
+            if (words.length < 4) return null;
+            for (let k = words.length - 1; k >= 3; k--) {
+                const m = findMatch(text, words.slice(0, k).join(' '), ratio);
+                if (!m) continue;
+                const end = m.index + m[0].length, rest = words.slice(k), tail = text.slice(end);
+                for (let j = 0; j < rest.length; j++) {
+                    const m2 = findMatch(tail, rest.slice(j).join(' '));
+                    if (m2) return [[m.index, end], [end + m2.index, end + m2.index + m2[0].length]];
+                }
+                return [[m.index, end]];
+            }
+            return null;
         }
         const markHTML = (text, m) => esc(text.slice(0, m.index)) + '<mark class="expr-mark">' + esc(m[0]) + '</mark>' + esc(text.slice(m.index + m[0].length));
         // Expressão cortada entre dois turnos: destaca o fim do primeiro e o começo do segundo (ou null se não achar)
@@ -942,33 +972,35 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                     if (m) { ptHtml[i] = markHTML(pt[i], m); done = true; }
                 }
                 if (!done && n === 2) { const sp = splitHL(pt[0], pt[1], c); if (sp) { ptHtml = sp; done = true; } }
+                for (let i = 0; i < n && !done; i++) {
+                    const r = partialRanges(pt[i], c, ratio);
+                    if (r) { ptHtml[i] = markRanges(pt[i], r); done = true; }
+                }
                 if (done) break;
             }
             return { en: enHtml, pt: ptHtml };
         }
 
-        // ================= Pausa automática =================
-        let ap = null;   // { from, stop, armed, at }
-        function paintAP() {
-            if (!ap) { show($('ap-card'), false); return; }
-            $('ap-text').textContent = `Pausa automática em ${fmtShort(ap.stop)} (fim do turno + ${CONFIG.extraPauseSeconds} s)`;
-            show($('ap-card'), true);
-        }
-        function clearAP() { ap = null; paintAP(); }
-        function playFrom(t, expr) {
+        // ================= Ir até um ponto do vídeo =================
+        function playFrom(t) {
             if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando. Tente de novo em um instante.' : 'O vídeo ainda não foi configurado.', true); return; }
-            ap = { from: t, stop: pauseTimeFor(t, expr), armed: false, at: performance.now() };
-            paintAP();
             player.seek(t + CONFIG.offsetSeconds);
             player.play();
         }
-        $('ap-cancel').addEventListener('click', clearAP);
 
         // ================= Transcrições =================
         let activeKey = null, activeLo = -1, follow = true, mode = 'transcripts';
         // Um box (inglês ou português) de um turno, na cor do falante
-        function turnBox(t, cls, tag, innerHtml) {
+        function turnBox(t, cls, tag, innerHtml, compact) {
             const av = getAvatarColors(t.who), name = prettyName(t.who);
+            const head = compact
+                ? `<div class="flex items-center gap-2 mb-2">
+                            <span class="font-bold text-xs text-slate-800 truncate">${esc(name)}</span>
+                            <span class="shrink-0 text-[11px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded">${fmtHMS(t.start)}</span>
+                            <span class="ml-auto shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">${tag}</span>
+                        </div>`
+                : null;
+            if (head) return `<div class="box sp ${cls} border border-slate-200 rounded-xl p-3 shadow-sm" style="--sp-bg: ${av.tint}; --sp-bgd: ${av.tintD}; --sp-bd: ${av.accent}; --sp-bdd: ${av.accentD};">${head}<p class="txt text-slate-700 m-0">${innerHtml}</p></div>`;
             return `<div class="box sp ${cls} border border-slate-200 rounded-xl p-4 shadow-sm" style="--sp-bg: ${av.tint}; --sp-bgd: ${av.tintD}; --sp-bd: ${av.accent}; --sp-bdd: ${av.accentD};">
                         <div class="flex items-center gap-3 mb-2">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border border-black/5 avatar-dyn" style="background-color: ${av.bg}; color: ${av.text}; --av-bg-d: ${av.bgD}; --av-fg-d: ${av.textD};">${esc(name.charAt(0))}</div>
@@ -1010,7 +1042,6 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const card = e.target.closest('.utterance');
             if (!card) return;
             if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando.' : 'O vídeo ainda não foi configurado.', true); return; }
-            clearAP();
             player.seek(turns[Number(card.dataset.i)].start + CONFIG.offsetSeconds + 0.01);
             player.play();
         });
@@ -1044,7 +1075,8 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         let qIdx = 0, qFilter = 'all', qShuffled = false, resetArmed = false;
         const qOriginal = questions.map((_, i) => i);
         let qOrder = qOriginal.slice();
-        const revealed = new Set(), ctxOpen = new Set();
+        const revealed = new Set();
+        let ctxOn = false, ctxKey = null;   // trecho da transcrição abaixo do vídeo: liga/desliga e vale para as próximas perguntas
         const RK = 'translationPracticeRatings';
         let ratings = {};
         try { ratings = JSON.parse(localStorage.getItem(RK) || '{}') || {}; } catch (e) { ratings = {}; }
@@ -1108,21 +1140,35 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             let rows = '';
             for (let k = ex.from; k <= ex.idx; k++) {
                 const t = turns[k];
-                rows += `<div class="cols mb-3">${turnBox(t, 'col-en', 'EN', hl.en[k - ex.from])}${turnBox(t, 'col-pt', 'PT', hl.pt[k - ex.from])}</div>`;
+                rows += `<div class="cols mb-3" style="column-gap: .5rem;">${turnBox(t, 'col-en', 'EN', hl.en[k - ex.from], true)}${turnBox(t, 'col-pt', 'PT', hl.pt[k - ex.from], true)}</div>`;
             }
-            return `<div class="mt-4"><div class="${LABEL}">Trecho da transcrição (a expressão e a sua tradução estão destacadas)</div>${rows}</div>`;
+            return rows;
+        }
+        // Mostra (ou esconde) o trecho logo abaixo do vídeo: só no modo perguntas, só depois de abrir o gabarito
+        function renderCtxPanel() {
+            const q = questions[qIdx];
+            const on = mode === 'questions' && ctxOn && !!q && revealed.has(qIdx);
+            $('ctx-panel').classList.toggle('open', on);
+            if (!on) { ctxKey = null; return; }
+            if (ctxKey === qIdx) return;   // já está mostrando esta pergunta: não perde a rolagem
+            ctxKey = qIdx;
+            const body = $('ctx-body');
+            body.innerHTML = contextHTML(q);
+            body.scrollTop = 0;
+            const mk = body.querySelector('mark');
+            if (mk) requestAnimationFrame(() => { body.scrollTop = Math.max(0, mk.offsetTop - body.clientHeight / 3); });
         }
         function renderQuestion(keepScroll) {
             const body = $('q-body'), prevTop = body.scrollTop;
             const q = questions[qIdx];
             if (!q) { body.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">Nenhuma pergunta carregada.</p>'; return; }
-            const open = revealed.has(qIdx), cur = rateOf(qIdx), ctx = ctxOpen.has(qIdx);
+            const open = revealed.has(qIdx), cur = rateOf(qIdx), ctx = ctxOn;
             body.innerHTML = `
                 <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     <div class="flex flex-wrap items-center gap-3 mb-5">
                         <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">${q.n}</span>
                         <span class="font-bold text-base text-slate-800">&ldquo;${esc(q.expr)}&rdquo;</span>
-                        <button type="button" data-t="${q.t}" class="inline-flex items-center gap-1.5 font-mono text-xs bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2.5 py-1 rounded-lg font-semibold shadow-sm" title="Ouvir o trecho (pausa sozinho depois do turno)">${PLAY_ICON}${fmtShort(q.t)}</button>
+                        <button type="button" data-t="${q.t}" class="inline-flex items-center gap-1.5 font-mono text-xs bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2.5 py-1 rounded-lg font-semibold shadow-sm" title="Ir para este ponto do vídeo">${PLAY_ICON}${fmtShort(q.t)}</button>
                     </div>
                     <div class="${LABEL}">Question</div>
                     <p class="txt-lg text-slate-700 m-0">${withTimeButtons(q.q)}</p>
@@ -1139,11 +1185,12 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                     <div class="mt-4 flex flex-wrap items-center gap-2">
                         <span class="text-xs font-semibold text-slate-500 mr-1">Como foi a sua resposta?</span>
                         ${scoreBtn('ok', 'Acertei', cur)}${scoreBtn('almost', 'Quase', cur)}${scoreBtn('miss', 'Errei', cur)}
-                        <button id="ctx-btn" type="button" aria-expanded="${ctx}" class="ml-auto text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50">${ctx ? 'Esconder trecho' : 'Ver trecho na transcrição'}</button>
+                        <button id="ctx-btn" type="button" aria-expanded="${ctx}" class="ml-auto text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50">${ctx ? 'Esconder trecho' : 'Ver trecho da transcrição'}</button>
                     </div>
-                    ${ctx ? contextHTML(q) : ''}` : ''}
+                    ` : ''}
                 </div>`;
             body.scrollTop = keepScroll ? prevTop : 0;
+            renderCtxPanel();
         }
         function gotoQuestion(i) {
             if (i === null || i < 0 || i >= questions.length) return;
@@ -1176,9 +1223,10 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             if (!resetArmed) { resetArmed = true; clearTimeout(resetTimer); resetTimer = setTimeout(() => { resetArmed = false; renderNav(); }, 3000); renderNav(); return; }
             resetArmed = false; clearTimeout(resetTimer); ratings = {}; saveRatings(); renderNav(); renderQuestion(true);
         });
+        $('ctx-close').addEventListener('click', () => { ctxOn = false; renderQuestion(true); });
         $('q-body').addEventListener('click', e => {
             const tb = e.target.closest('[data-t]');
-            if (tb) { const q = questions[qIdx]; playFrom(Number(tb.dataset.t), q && q.expr); return; }
+            if (tb) { playFrom(Number(tb.dataset.t)); return; }
             const sb = e.target.closest('[data-score]');
             if (sb) {
                 const q = questions[qIdx], v = sb.dataset.score;
@@ -1186,8 +1234,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 saveRatings(); renderNav(); renderQuestion(true); return;
             }
             if (e.target.closest('#ctx-btn')) {
-                if (ctxOpen.has(qIdx)) ctxOpen.delete(qIdx); else ctxOpen.add(qIdx);
-                renderQuestion(true); return;
+                ctxOn = !ctxOn; renderQuestion(true); return;
             }
             if (e.target.closest('#reveal-btn')) {
                 if (revealed.has(qIdx)) revealed.delete(qIdx); else revealed.add(qIdx);
@@ -1206,6 +1253,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             mode = m;
             $('main').dataset.mode = m;
             show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions'); show($('panel'), m !== 'video');
+            renderCtxPanel();
             MODES.forEach(k => { const b = $('mode-' + k); b.className = k === m ? SW_ON : SW_OFF; b.setAttribute('aria-pressed', String(k === m)); });
             if (m === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
         }
@@ -1255,17 +1303,6 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             if (vt == null) return;
             const t = vt - CONFIG.offsetSeconds;
             updateActive(t);
-            if (!ap) return;
-            if (!ap.armed) {
-                // espera o vídeo chegar de fato ao ponto pedido (o pulo do YouTube leva um instante)
-                if (t >= ap.from - 1 && t <= ap.stop) ap.armed = true;
-                else if (performance.now() - ap.at > 4000) clearAP();
-            } else if (t >= ap.stop) {
-                if (t < ap.stop + 2) { player.pause(); showAlert('Pausa automática: o trecho terminou.'); }
-                clearAP();
-            } else if (t < ap.from - 2) {
-                clearAP();   // a pessoa voltou o vídeo por conta própria
-            }
         }
         setInterval(tick, 200);
 
