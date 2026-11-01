@@ -48,6 +48,15 @@
         #skip-row { display: contents; }
         #skip-back-btn { order: 0; } #video-box { order: 1; } #skip-forward-btn { order: 2; }
         #splitter { touch-action: none; }
+        /* botões no canto direito: em coluna ao lado do vídeo; no modo perguntas, em linha sobre o painel da direita */
+        #chrome-right { flex-direction: column; align-items: flex-end; }
+        #chrome-right #theme-btn { order: 1; }
+        #chrome-right #mode-switch { order: 0; flex-direction: column; align-items: stretch; }
+        #chrome-right #mode-switch button { white-space: nowrap; text-align: center; }
+        body[data-mode="questions"] #chrome-right { flex-direction: row; align-items: center; }
+        body[data-mode="questions"] #chrome-right #theme-btn { order: 0; }
+        body[data-mode="questions"] #chrome-right #mode-switch { flex-direction: row; align-items: center; }
+        @media (max-width: 899px) { main { padding-top: 2.75rem; } }
         /* trecho da transcrição abaixo do vídeo (modo perguntas) */
         #ctx-panel { display: none; flex-direction: column; min-height: 0; max-height: 40vh; }
         main[data-mode="questions"] #ctx-panel.open { display: flex; }
@@ -63,7 +72,8 @@
         /* Modo perguntas: o vídeo volta para a esquerda e a pergunta fica à direita */
         @media (min-width: 900px) {
             main[data-mode="questions"] { flex-direction: row; }
-            main[data-mode="questions"] #video-section { width: 44%; min-width: 380px; align-items: stretch; justify-content: flex-start; padding: 1.5rem; overflow-y: auto; border-bottom-width: 0; border-right-width: 1px; }
+            main[data-mode="questions"] #video-section { width: 44%; min-width: 380px; align-items: stretch; justify-content: flex-start; padding: 2.25rem 1.5rem 1.5rem; overflow-y: auto; border-bottom-width: 0; border-right-width: 1px; }
+            main[data-mode="questions"] #panel { padding-top: 2.75rem; }
             main[data-mode="questions"] #ctx-panel { flex: 1 1 0; min-height: 200px; max-height: none; }
             main[data-mode="questions"] #video-wrapper { width: 100%; flex-direction: column; align-items: center; gap: .5rem; }
             main[data-mode="questions"] #skip-row { display: flex; justify-content: center; gap: .75rem; order: 2; }
@@ -152,24 +162,19 @@
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col font-sans">
 
-    <header class="bg-indigo-100 border-b border-indigo-200 px-4 py-1.5 flex justify-between items-center shadow-sm z-10 shrink-0">
-        <p class="text-[11px] text-indigo-700 truncate min-w-0 m-0">Criado por <span class="font-semibold">Ana Carolina Caumo</span></p>
-        <div class="flex items-center gap-3 shrink-0">
-            <div id="fs-group" role="group" aria-label="Tamanho da letra" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
-                <button id="fs-down" type="button" aria-label="Diminuir a letra" title="Diminuir a letra" class="text-xs font-bold px-2.5 py-1.5 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A&minus;</button>
-                <button id="fs-up" type="button" aria-label="Aumentar a letra" title="Aumentar a letra" class="text-base leading-none font-bold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A+</button>
-            </div>
-            <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
-                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-            </button>
-            <div id="mode-switch" role="group" aria-label="Modo" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
+    <!-- Sem barra no topo: o crédito fica no canto esquerdo e os botões no canto direito, ao lado do vídeo -->
+    <p id="chrome-left" class="fixed top-2 left-3 z-20 m-0 text-[11px] text-indigo-700 pointer-events-none">Criado por <span class="font-semibold">Ana Carolina Caumo</span></p>
+    <div id="chrome-right" class="fixed top-2 right-3 z-20 flex gap-2">
+        <div id="mode-switch" role="group" aria-label="Modo" class="flex items-center gap-1 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
                 <button id="mode-transcripts" type="button" aria-pressed="true" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Transcrições</button>
                 <button id="mode-video" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Só vídeo</button>
                 <button id="mode-questions" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Perguntas do avaliador</button>
             </div>
-        </div>
-    </header>
+        <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            </button>
+    </div>
 
     <main id="main" data-mode="transcripts" class="flex-1 flex flex-col overflow-hidden">
         <!-- Em cima, no centro: o vídeo (carregado pela própria página, ninguém precisa enviar nada) -->
@@ -211,6 +216,10 @@
                         <button type="button" data-lang="en" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">EN</button>
                         <button type="button" data-lang="pt" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">PT</button>
                     </div>
+                    <div class="fs-group flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm shrink-0" role="group" aria-label="Tamanho da letra">
+                        <button type="button" aria-label="Diminuir a letra" title="Diminuir a letra" class="fs-down text-xs font-bold px-2.5 py-1.5 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A&minus;</button>
+                        <button type="button" aria-label="Aumentar a letra" title="Aumentar a letra" class="fs-up text-base leading-none font-bold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A+</button>
+                    </div>
                     <button id="follow-btn" type="button" aria-pressed="true" title="Rolar as transcrições junto com o vídeo" class="shrink-0 text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm bg-indigo-100 text-indigo-700 border-indigo-300">Acompanhar vídeo</button>
                     <span id="utterance-count" class="shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">0 turnos</span>
                 </div>
@@ -226,6 +235,10 @@
                                 <button type="button" data-f="all" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Todas</button>
                                 <button type="button" data-f="review" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Para rever</button>
                                 <button type="button" data-f="todo" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Sem avaliação</button>
+                            </div>
+                            <div class="fs-group flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm shrink-0" role="group" aria-label="Tamanho da letra">
+                                <button type="button" aria-label="Diminuir a letra" title="Diminuir a letra" class="fs-down text-xs font-bold px-2.5 py-1.5 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A&minus;</button>
+                                <button type="button" aria-label="Aumentar a letra" title="Aumentar a letra" class="fs-up text-base leading-none font-bold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A+</button>
                             </div>
                             <button id="q-shuffle" type="button" title="Muda a ordem das perguntas (clique de novo para voltar à ordem original)" class="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm bg-white text-slate-500 border-slate-300 hover:bg-slate-50">Embaralhar</button>
                             <span id="q-progress" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">Pergunta 0 de 0</span>
@@ -863,6 +876,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
 
         // ================= Turnos: qual está tocando, onde termina =================
         // Devolve [primeiro, último] dos turnos ativos em t (turnos com o mesmo horário contam juntos), ou null antes do primeiro
+        function turnEnd(i) { const s = starts[i]; for (let j = i + 1; j < starts.length; j++) if (starts[j] > s) return starts[j]; return s + 10; }
         function turnRange(t) {
             if (!starts.length || t < starts[0]) return null;
             let a = 0, b = starts.length - 1;
@@ -1027,6 +1041,44 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const target = c.scrollTop + (er.top - cr.top) - (c.clientHeight / 2 - er.height / 2);
             c.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'auto' });
         }
+        // Rolagem que acompanha a fala, como um teleprompter: dentro de cada turno, a "linha de leitura" anda do começo ao fim do
+        // texto na mesma proporção do tempo do turno. Assim, em turnos longos a página desliza aos poucos e, quando o próximo
+        // turno começa, ele já está chegando na tela, sem corte brusco. (É uma estimativa: supõe fala em ritmo constante.)
+        let scrollTarget = null, holdUntil = 0, lastVT = null;
+        function focusTarget(t) {
+            const r = turnRange(t);
+            if (!r) return null;
+            const first = $('turn-' + r[0]), last = $('turn-' + r[1]);
+            if (!first || !last || !first.offsetParent) return null;
+            const c = $('transcript-container'), cr = c.getBoundingClientRect();
+            const top = first.getBoundingClientRect().top - cr.top + c.scrollTop;
+            const bottom = last.getBoundingClientRect().bottom - cr.top + c.scrollTop;
+            const start = starts[r[0]], end = turnEnd(r[1]);
+            const p = Math.min(1, Math.max(0, (t - start) / Math.max(1, end - start)));
+            const textTop = top + 56, textBottom = bottom - 16;   // 56 px: cabeçalho do box (avatar, nome, horário)
+            const focus = textTop + p * Math.max(0, textBottom - textTop);
+            return Math.max(0, focus - c.clientHeight * 0.38);
+        }
+        function followSnap() {   // vai direto para a posição atual (sem animação)
+            const vt = player.getTime();
+            const tg = vt == null ? null : focusTarget(vt - CONFIG.offsetSeconds);
+            if (tg != null) { $('transcript-container').scrollTop = tg; scrollTarget = null; }
+            else if (activeLo >= 0) scrollToCard($('turn-' + activeLo), false);
+        }
+        (function () {
+            const c = $('transcript-container');
+            // se a pessoa rolar ou selecionar texto por conta própria, a rolagem automática espera um pouco
+            const hold = () => { holdUntil = performance.now() + 6000; scrollTarget = null; };
+            ['wheel', 'touchstart', 'pointerdown'].forEach(ev => c.addEventListener(ev, hold, { passive: true }));
+            (function frame() {
+                requestAnimationFrame(frame);
+                if (scrollTarget == null) return;
+                if (!follow || mode !== 'transcripts') { scrollTarget = null; return; }
+                const d = scrollTarget - c.scrollTop;
+                if (Math.abs(d) <= 1) { c.scrollTop = scrollTarget; scrollTarget = null; return; }
+                c.scrollTop += d * 0.18;
+            })();
+        })();
         function updateActive(t) {
             const r = turnRange(t);
             const key = r ? r[0] + '-' + r[1] : null;
@@ -1036,12 +1088,12 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             if (!r) return;
             for (let i = r[0]; i <= r[1]; i++) { const el = $('turn-' + i); if (el) el.classList.add('active'); }
             activeLo = r[0];
-            if (follow && mode === 'transcripts') scrollToCard($('turn-' + r[0]), true);
         }
         $('transcript-container').addEventListener('click', e => {
             const card = e.target.closest('.utterance');
             if (!card) return;
             if (!player.available()) { showAlert(player.kind ? 'O vídeo ainda está carregando.' : 'O vídeo ainda não foi configurado.', true); return; }
+            holdUntil = 0; lastVT = null;
             player.seek(turns[Number(card.dataset.i)].start + CONFIG.offsetSeconds + 0.01);
             player.play();
         });
@@ -1061,7 +1113,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             const c = $('transcript-container');
             c.classList.remove('lang-both', 'lang-en', 'lang-pt'); c.classList.add('lang-' + l);
             document.querySelectorAll('#lang-switch button').forEach(b => { b.className = b.dataset.lang === l ? SW_ON : SW_OFF; });
-            if (activeLo >= 0) scrollToCard($('turn-' + activeLo), false);
+            followSnap();
         }
         $('lang-switch').addEventListener('click', e => { const b = e.target.closest('button[data-lang]'); if (b) setLang(b.dataset.lang); });
         function paintFollow() {
@@ -1069,7 +1121,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             b.setAttribute('aria-pressed', String(follow));
             b.className = 'shrink-0 text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm ' + (follow ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50');
         }
-        $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow && activeLo >= 0) scrollToCard($('turn-' + activeLo), true); });
+        $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow) { holdUntil = 0; const vt = player.getTime(); if (vt != null) scrollTarget = focusTarget(vt - CONFIG.offsetSeconds); } });
 
         // ================= Perguntas =================
         let qIdx = 0, qFilter = 'all', qShuffled = false, resetArmed = false;
@@ -1251,11 +1303,11 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         const MODES = ['transcripts', 'video', 'questions'];
         function setMode(m) {
             mode = m;
-            $('main').dataset.mode = m;
+            $('main').dataset.mode = m; document.body.dataset.mode = m;
             show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions'); show($('panel'), m !== 'video');
             renderCtxPanel();
             MODES.forEach(k => { const b = $('mode-' + k); b.className = k === m ? SW_ON : SW_OFF; b.setAttribute('aria-pressed', String(k === m)); });
-            if (m === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
+            if (m === 'transcripts') requestAnimationFrame(followSnap);
         }
         MODES.forEach(k => $('mode-' + k).addEventListener('click', () => setMode(k)));
 
@@ -1265,12 +1317,13 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         try { const sv = parseInt(localStorage.getItem('translationPracticeFont'), 10); if (sv >= 0 && sv < FS.length) fsI = sv; } catch (e) {}
         function paintFs(keep) {
             document.documentElement.style.setProperty('--fs', String(FS[fsI]));
-            $('fs-down').disabled = fsI <= 0; $('fs-up').disabled = fsI >= FS.length - 1;
+            document.querySelectorAll('.fs-down').forEach(b => { b.disabled = fsI <= 0; });
+            document.querySelectorAll('.fs-up').forEach(b => { b.disabled = fsI >= FS.length - 1; });
             try { localStorage.setItem('translationPracticeFont', String(fsI)); } catch (e) {}
-            if (keep && mode === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
+            if (keep && mode === 'transcripts') requestAnimationFrame(followSnap);
         }
-        $('fs-down').addEventListener('click', () => { if (fsI > 0) { fsI--; paintFs(true); } });
-        $('fs-up').addEventListener('click', () => { if (fsI < FS.length - 1) { fsI++; paintFs(true); } });
+        document.querySelectorAll('.fs-down').forEach(b => b.addEventListener('click', () => { if (fsI > 0) { fsI--; paintFs(true); } }));
+        document.querySelectorAll('.fs-up').forEach(b => b.addEventListener('click', () => { if (fsI < FS.length - 1) { fsI++; paintFs(true); } }));
         paintFs(false);
 
         // ================= Tamanho do vídeo (barra arrastável) =================
@@ -1303,6 +1356,9 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             if (vt == null) return;
             const t = vt - CONFIG.offsetSeconds;
             updateActive(t);
+            const moved = lastVT === null || Math.abs(vt - lastVT) > 0.001;   // só rola enquanto o vídeo anda (ou depois de um pulo)
+            lastVT = vt;
+            if (follow && mode === 'transcripts' && moved && performance.now() > holdUntil) { const tg = focusTarget(t); if (tg != null) scrollTarget = tg; }
         }
         setInterval(tick, 200);
 
