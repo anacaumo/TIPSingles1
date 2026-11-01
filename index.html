@@ -24,6 +24,16 @@
 
         .utterance .box { transition: all 0.2s ease; }
         .utterance.hidden { display: none; }
+        /* tamanho da letra (controle A− / A+ no cabeçalho) */
+        .txt { font-size: calc(.875rem * var(--fs, 1)); line-height: 1.625; }
+        .txt-lg { font-size: calc(1rem * var(--fs, 1)); line-height: 1.625; }
+        /* cada falante tem a sua cor no box */
+        .box.sp { background-color: var(--sp-bg); border-left: 4px solid var(--sp-bd); }
+        html.dark .box.sp { background-color: var(--sp-bgd); border-left-color: var(--sp-bdd); }
+        .utterance.active .box.sp { border-left-color: var(--sp-bd) !important; }
+        html.dark .utterance.active .box.sp { border-left-color: var(--sp-bdd) !important; }
+        .expr-mark { background: #fde68a; color: inherit; border-radius: 3px; padding: 0 2px; }
+        html.dark .expr-mark { background: rgba(250, 204, 21, .35); }
         .utterance.active .box {
             background-color: #eff6ff !important;
             border-color: #3b82f6 !important;
@@ -38,6 +48,10 @@
         #skip-row { display: contents; }
         #skip-back-btn { order: 0; } #video-box { order: 1; } #skip-forward-btn { order: 2; }
         #splitter { touch-action: none; }
+        /* modo "só vídeo": sem transcrições nem perguntas, o vídeo ocupa a página */
+        main[data-mode="video"] #video-section { flex: 1 1 auto; justify-content: center; }
+        main[data-mode="video"] #video-box { height: min(calc(100vh - 14rem), calc((100vw - 10rem) * 9 / 16)); }
+        main[data-mode="video"] #splitter { display: none; }
         #splitter .grip { width: 3rem; height: 4px; border-radius: 9999px; background: #cbd5e1; transition: background .15s; }
         #splitter:hover .grip, #splitter:focus-visible .grip, #splitter.dragging .grip { background: #6366f1; }
         html.dark #splitter .grip { background: #5f5d68; }
@@ -78,6 +92,11 @@
         html.dark .bg-indigo-600 { background-color: #c9bfff; }
         html.dark .bg-emerald-100 { background-color: #015236; }
         html.dark .bg-amber-50 { background-color: #3a3534; }
+        html.dark .bg-amber-100 { background-color: #4a3a1c; }
+        html.dark .bg-rose-100 { background-color: #5b2a2c; }
+        html.dark .text-rose-800 { color: #ffb4ab; }
+        html.dark .hover\:bg-amber-200:hover { background-color: #5a4720; }
+        html.dark .hover\:bg-rose-200:hover { background-color: #6e3336; }
         html.dark .hover\:bg-slate-50:hover { background-color: #201f24; }
         html.dark .hover\:bg-slate-200:hover { background-color: #37363c; }
         html.dark .hover\:bg-slate-300:hover { background-color: #434247; }
@@ -130,20 +149,30 @@
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col font-sans">
 
     <header class="bg-indigo-100 border-b border-indigo-200 px-6 py-3 flex justify-between items-center shadow-sm z-10 shrink-0">
-        <div>
+        <div class="min-w-0">
             <h1 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                 Treino de Tradução Juramentada
             </h1>
-            <p class="text-[11px] text-indigo-700 mt-0.5">Entrevista Mishal Husain / Mark Carney: transcrições em inglês e português e perguntas do avaliador</p>
+            <p class="text-[11px] text-indigo-700 mt-0.5 truncate">Entrevista Mishal Husain / Mark Carney: transcrições em inglês e português e perguntas do avaliador</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 shrink-0">
+            <div id="rate-switch" role="group" aria-label="Velocidade do vídeo" title="Velocidade do vídeo" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
+                <button type="button" data-rate="0.75" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">0,75×</button>
+                <button type="button" data-rate="1" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">1×</button>
+                <button type="button" data-rate="1.25" class="text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-500 hover:text-slate-700">1,25×</button>
+            </div>
+            <div id="fs-group" role="group" aria-label="Tamanho da letra" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
+                <button id="fs-down" type="button" aria-label="Diminuir a letra" title="Diminuir a letra" class="text-xs font-bold px-2.5 py-1.5 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A&minus;</button>
+                <button id="fs-up" type="button" aria-label="Aumentar a letra" title="Aumentar a letra" class="text-base leading-none font-bold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">A+</button>
+            </div>
             <button id="theme-btn" type="button" aria-pressed="false" aria-label="Mudar para o modo escuro" title="Mudar para o modo escuro" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
                 <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
             </button>
             <div id="mode-switch" role="group" aria-label="Modo" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
                 <button id="mode-transcripts" type="button" aria-pressed="true" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Transcrições</button>
+                <button id="mode-video" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Só vídeo</button>
                 <button id="mode-questions" type="button" aria-pressed="false" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Perguntas do avaliador</button>
             </div>
         </div>
@@ -172,7 +201,7 @@
         <div id="splitter" role="separator" aria-orientation="horizontal" tabindex="0" title="Arraste para aumentar ou diminuir o vídeo (duplo clique: tamanho padrão)" aria-label="Tamanho do vídeo" class="shrink-0 h-3 flex items-center justify-center cursor-row-resize bg-slate-100 border-y border-slate-200 select-none"><span class="grip"></span></div>
 
         <!-- Embaixo, metade e metade: transcrições (EN | PT) ou perguntas -->
-        <section class="flex-1 min-h-0 flex flex-col bg-white overflow-hidden relative">
+        <section id="panel" class="flex-1 min-h-0 flex flex-col bg-white overflow-hidden relative">
 
             <div id="view-transcripts" class="flex flex-1 min-h-0 flex-col">
                 <div class="content-pad bg-white border-b border-slate-200 py-3 shadow-sm z-10 flex gap-3 items-center justify-between shrink-0">
@@ -193,12 +222,21 @@
 
             <div id="view-questions" class="hidden flex-1 min-h-0 flex-col">
                 <div class="content-pad bg-white border-b border-slate-200 py-3 shadow-sm z-10 shrink-0">
-                    <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Perguntas do avaliador</h2>
-                        <span id="q-progress" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">Pergunta 0 de 0</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div id="q-filter" role="group" aria-label="Filtrar perguntas" class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-sm">
+                                <button type="button" data-f="all" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm">Todas</button>
+                                <button type="button" data-f="review" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Para rever</button>
+                                <button type="button" data-f="todo" class="text-xs font-semibold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700">Sem avaliação</button>
+                            </div>
+                            <button id="q-shuffle" type="button" title="Muda a ordem das perguntas (clique de novo para voltar à ordem original)" class="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors whitespace-nowrap shadow-sm bg-white text-slate-500 border-slate-300 hover:bg-slate-50">Embaralhar</button>
+                            <span id="q-progress" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full whitespace-nowrap">Pergunta 0 de 0</span>
+                        </div>
                     </div>
-                    <div id="q-nav" class="flex flex-wrap gap-1.5"></div>
-                    <p id="q-help" class="text-[11px] text-slate-500 mt-3">Clique no horário para ouvir o trecho no vídeo: ele pausa sozinho 5 segundos depois que o turno de fala termina. Verdes: perguntas cujo gabarito você já abriu.</p>
+                    <div id="q-nav" class="flex flex-wrap gap-1.5 pt-1"></div>
+                    <div id="q-stats" class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 mt-3"></div>
+                    <p id="q-help" class="text-[11px] text-slate-500 mt-1">Clique no horário (no título ou no texto da pergunta) para ouvir o trecho; clicar de novo repete. O vídeo pausa sozinho 5 segundos depois que o turno de fala termina. Depois de abrir o gabarito, marque como foi: o número da pergunta ganha cor.</p>
                 </div>
                 <div id="q-body" class="content-pad flex-1 overflow-y-auto py-4 custom-scrollbar bg-slate-50/50"></div>
                 <div class="content-pad border-t border-slate-200 bg-white py-3 flex justify-between items-center shrink-0">
@@ -714,7 +752,8 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
             for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
             h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
             const hue = (h >>> 0) % 360;
-            return { bg: `hsl(${hue}, 70%, 85%)`, text: `hsl(${hue}, 80%, 25%)`, bgD: `hsl(${hue}, 42%, 32%)`, textD: `hsl(${hue}, 80%, 92%)` };
+            return { bg: `hsl(${hue}, 70%, 85%)`, text: `hsl(${hue}, 80%, 25%)`, bgD: `hsl(${hue}, 42%, 32%)`, textD: `hsl(${hue}, 80%, 92%)`,
+                     tint: `hsl(${hue}, 80%, 96%)`, tintD: `hsl(${hue}, 24%, 19%)`, accent: `hsl(${hue}, 55%, 62%)`, accentD: `hsl(${hue}, 50%, 60%)` };
         }
 
         function showAlert(message, isError = false, durationMs = 4000) {
@@ -780,12 +819,16 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
 
         // ================= Player (YouTube ou .mp4) =================
         const player = {
-            kind: null, yt: null, ready: false, v: null,
+            kind: null, yt: null, ready: false, v: null, rate: 1,
             available() { return this.kind === 'mp4' || (this.kind === 'yt' && this.ready); },
             getTime() { try { if (this.kind === 'mp4') return this.v.currentTime; if (this.kind === 'yt' && this.ready) return this.yt.getCurrentTime(); } catch (e) {} return null; },
             seek(t) { if (this.kind === 'mp4') this.v.currentTime = t; else this.yt.seekTo(t, true); },
             play() { if (this.kind === 'mp4') this.v.play().catch(() => {}); else this.yt.playVideo(); },
-            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); }
+            pause() { if (this.kind === 'mp4') this.v.pause(); else this.yt.pauseVideo(); },
+            setRate(r) {
+                this.rate = r;
+                try { if (this.kind === 'mp4') { this.v.defaultPlaybackRate = r; this.v.playbackRate = r; } else if (this.kind === 'yt' && this.ready) this.yt.setPlaybackRate(r); } catch (e) {}
+            }
         };
         function videoMessage(html) { const el = $('video-msg'); el.innerHTML = html; show(el, true); }
         const YT_ERRORS = {
@@ -803,7 +846,8 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 player.yt = new YT.Player('yt-host', {
                     videoId: CONFIG.youtubeId, width: '100%', height: '100%', playerVars: vars,
                     events: {
-                        onReady: () => { player.ready = true; },
+                        onReady: () => { player.ready = true; if (player.rate !== 1) player.setRate(player.rate); },
+                        onPlaybackRateChange: e => { player.rate = e.data; paintRate(); },
                         onError: e => videoMessage((YT_ERRORS[e.data] || 'Erro ao carregar o vídeo.') + `<br><br><a href="https://www.youtube.com/watch?v=${encodeURIComponent(CONFIG.youtubeId)}" target="_blank" rel="noopener">Abrir no YouTube</a>`)
                     }
                 });
@@ -818,6 +862,7 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                 player.kind = 'mp4'; player.v = $('html5');
                 show($('yt-host'), false); show(player.v, true, 'block');
                 player.v.addEventListener('error', () => videoMessage('Não foi possível carregar o arquivo de vídeo. Confira o endereço em CONFIG.mp4Url.'));
+                player.v.addEventListener('ratechange', () => { player.rate = player.v.playbackRate; paintRate(); });
                 player.v.src = CONFIG.mp4Url;
             } else if (CONFIG.youtubeId) {
                 player.kind = 'yt'; loadYouTube();
@@ -837,18 +882,27 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         }
         function turnEnd(i) { const s = starts[i]; for (let j = i + 1; j < starts.length; j++) if (starts[j] > s) return starts[j]; return s + 10; }
         const norm = s => String(s ?? '').toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
-        // O horário das perguntas aponta um pouco antes da expressão: procura a expressão no turno desse horário e nos seguintes
-        function pauseTimeFor(t, expr) {
+        // O horário das perguntas aponta um pouco antes da expressão: procura a expressão no turno desse horário e nos seguintes.
+        // Devolve { from, idx }: o turno em que ela está (ou, se ela é cortada entre dois turnos, do primeiro ao segundo)
+        function exprTurn(t, expr) {
             const r = turnRange(t);
             const first = r ? r[0] : 0;
-            let idx = first;
             const needle = norm(expr);
             if (needle) for (let k = first; k < Math.min(turns.length, first + 6); k++) {
-                if (norm(turns[k].en).includes(needle)) { idx = k; break; }
+                if (norm(turns[k].en).includes(needle)) return { from: k, idx: k };
                 // expressão cortada entre dois turnos (ex.: "wasn't having" / "it."): vale o turno em que ela termina
-                if (k + 1 < turns.length && norm(turns[k].en + ' ' + turns[k + 1].en).includes(needle)) { idx = k + 1; break; }
+                if (k + 1 < turns.length && norm(turns[k].en + ' ' + turns[k + 1].en).includes(needle)) return { from: k, idx: k + 1 };
             }
-            return turnEnd(idx) + CONFIG.extraPauseSeconds;
+            return { from: first, idx: first };
+        }
+        function pauseTimeFor(t, expr) { return turnEnd(exprTurn(t, expr).idx) + CONFIG.extraPauseSeconds; }
+        // Texto em HTML com a expressão destacada (se aparecer no texto)
+        function hiHTML(text, expr) {
+            const pat = String(expr).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
+            let m = null;
+            try { m = pat ? new RegExp(pat, 'i').exec(text) : null; } catch (e) {}
+            if (!m) return esc(text);
+            return esc(text.slice(0, m.index)) + '<mark class="expr-mark">' + esc(m[0]) + '</mark>' + esc(text.slice(m.index + m[0].length));
         }
 
         // ================= Pausa automática =================
@@ -870,22 +924,25 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
 
         // ================= Transcrições =================
         let activeKey = null, activeLo = -1, follow = true, mode = 'transcripts';
-        function buildTranscript() {
-            const head = `<div class="sticky top-0 z-10 bg-slate-50 pt-3 pb-1 px-1"><div class="cols text-[11px] font-bold uppercase tracking-wider text-slate-500"><div class="col-en">English</div><div class="col-pt">Português</div></div></div>`;
-            $('transcript-container').innerHTML = head + turns.map((t, i) => {
-                const av = getAvatarColors(t.who), name = prettyName(t.who);
-                const box = (cls, tag, text) => `<div class="box ${cls} bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        // Um box (inglês ou português) de um turno, na cor do falante
+        function turnBox(t, cls, tag, innerHtml) {
+            const av = getAvatarColors(t.who), name = prettyName(t.who);
+            return `<div class="box sp ${cls} border border-slate-200 rounded-xl p-4 shadow-sm" style="--sp-bg: ${av.tint}; --sp-bgd: ${av.tintD}; --sp-bd: ${av.accent}; --sp-bdd: ${av.accentD};">
                         <div class="flex items-center gap-3 mb-2">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border border-black/5 avatar-dyn" style="background-color: ${av.bg}; color: ${av.text}; --av-bg-d: ${av.bgD}; --av-fg-d: ${av.textD};">${esc(name.charAt(0))}</div>
                             <span class="font-bold text-sm text-slate-800 truncate">${esc(name)}</span>
-                            <span class="shrink-0 text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">${fmtHMS(t.start)}</span>
-                            <span class="ml-auto shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">${tag}</span>
+                            <span class="shrink-0 text-xs font-mono text-slate-500 bg-white px-2 py-1 rounded">${fmtHMS(t.start)}</span>
+                            <span class="ml-auto shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">${tag}</span>
                         </div>
-                        <p class="text-sm leading-relaxed text-slate-700 m-0">${esc(text)}</p>
+                        <p class="txt text-slate-700 m-0">${innerHtml}</p>
                     </div>`;
+        }
+        function buildTranscript() {
+            const head = `<div class="sticky top-0 z-10 bg-slate-50 pt-3 pb-1 px-1"><div class="cols text-[11px] font-bold uppercase tracking-wider text-slate-500"><div class="col-en">English</div><div class="col-pt">Português</div></div></div>`;
+            $('transcript-container').innerHTML = head + turns.map((t, i) => {
                 return `<div class="utterance cols cursor-pointer mb-3" id="turn-${i}" data-i="${i}" data-text="${esc((t.who + ' ' + t.en + ' ' + t.pt).toLowerCase())}">
-                    ${box('col-en', 'EN', t.en)}
-                    ${box('col-pt', 'PT', t.pt)}
+                    ${turnBox(t, 'col-en', 'EN', esc(t.en))}
+                    ${turnBox(t, 'col-pt', 'PT', esc(t.pt))}
                 </div>`;
             }).join('');
             $('utterance-count').textContent = `${turns.length} turnos`;
@@ -942,8 +999,32 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         $('follow-btn').addEventListener('click', () => { follow = !follow; paintFollow(); if (follow && activeLo >= 0) scrollToCard($('turn-' + activeLo), true); });
 
         // ================= Perguntas =================
-        let qIdx = 0;
-        const revealed = new Set();
+        let qIdx = 0, qFilter = 'all', qShuffled = false, resetArmed = false;
+        const qOriginal = questions.map((_, i) => i);
+        let qOrder = qOriginal.slice();
+        const revealed = new Set(), ctxOpen = new Set();
+        const RK = 'translationPracticeRatings';
+        let ratings = {};
+        try { ratings = JSON.parse(localStorage.getItem(RK) || '{}') || {}; } catch (e) { ratings = {}; }
+        function saveRatings() { try { localStorage.setItem(RK, JSON.stringify(ratings)); } catch (e) {} }
+        const rateOf = i => ratings[questions[i].n] || null;
+        function matches(i) { const r = rateOf(i); return qFilter === 'all' || (qFilter === 'review' && (r === 'almost' || r === 'miss')) || (qFilter === 'todo' && !r); }
+        const visibleList = () => qOrder.filter(i => i === qIdx || matches(i));
+        // Próxima (dir = 1) ou anterior (dir = -1) pergunta que aparece no filtro atual, na ordem atual
+        function stepFrom(dir) {
+            let p = qOrder.indexOf(qIdx) + dir;
+            while (p >= 0 && p < qOrder.length) { if (matches(qOrder[p])) return qOrder[p]; p += dir; }
+            return null;
+        }
+        const RATE_NAME = { ok: 'acertei', almost: 'quase', miss: 'errei' };
+        const RATE_CLS = {
+            ok: 'bg-emerald-100 text-emerald-800 border-slate-200 hover:bg-emerald-200',
+            almost: 'bg-amber-100 text-amber-800 border-slate-200 hover:bg-amber-200',
+            miss: 'bg-rose-100 text-rose-800 border-slate-200 hover:bg-rose-200'
+        };
+        const DOT = { ok: 'bg-emerald-500', almost: 'bg-amber-400', miss: 'bg-rose-500' };
+        const OPEN_CLS = 'bg-indigo-50 text-indigo-700 border-indigo-300 hover:bg-indigo-200';
+        const IDLE_CLS = 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
         const PLAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>';
         function timeBtnInline(label, sec) {
             return `<button type="button" data-t="${sec}" class="font-semibold text-indigo-700 hover:text-indigo-900 underline decoration-dotted underline-offset-2 cursor-pointer" title="Ouvir o trecho no vídeo">${label}</button>`;
@@ -956,22 +1037,65 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         }
         const LABEL = 'text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1';
         function renderNav() {
-            $('q-nav').innerHTML = questions.map((q, i) => {
-                const cur = i === qIdx, seen = revealed.has(i);
-                const cls = cur ? 'bg-indigo-600 text-white border-indigo-300'
-                    : seen ? 'bg-emerald-100 text-emerald-800 border-slate-200 hover:bg-emerald-200'
-                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
-                return `<button type="button" data-q="${i}" class="w-8 h-8 rounded-lg text-xs font-bold border transition-colors ${cls}" ${cur ? 'aria-current="true"' : ''}>${q.n}</button>`;
+            const vis = visibleList();
+            $('q-nav').innerHTML = vis.map(i => {
+                const q = questions[i], cur = i === qIdx, r = rateOf(i), seen = revealed.has(i);
+                const cls = cur ? 'bg-indigo-600 text-white border-indigo-300' : r ? RATE_CLS[r] : seen ? OPEN_CLS : IDLE_CLS;
+                const dot = cur && r ? `<span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-white ${DOT[r]}"></span>` : '';
+                return `<button type="button" data-q="${i}" class="relative w-8 h-8 rounded-lg text-xs font-bold border transition-colors ${cls}" ${cur ? 'aria-current="true"' : ''} aria-label="Pergunta ${q.n}${r ? ' (' + RATE_NAME[r] + ')' : ''}">${q.n}${dot}</button>`;
             }).join('');
-            $('q-progress').textContent = `Pergunta ${questions.length ? qIdx + 1 : 0} de ${questions.length}`;
-            $('q-prev').disabled = qIdx <= 0;
-            $('q-next').disabled = qIdx >= questions.length - 1;
+            $('q-progress').textContent = `Pergunta ${questions.length ? vis.indexOf(qIdx) + 1 : 0} de ${vis.length}`;
+            $('q-prev').disabled = stepFrom(-1) === null;
+            $('q-next').disabled = stepFrom(1) === null;
+            const c = { ok: 0, almost: 0, miss: 0 };
+            questions.forEach((_, i) => { const r = rateOf(i); if (r) c[r]++; });
+            const todo = questions.length - c.ok - c.almost - c.miss;
+            $('q-stats').innerHTML = `<span><b class="text-emerald-800">${c.ok}</b> acertei &middot; <b class="text-amber-800">${c.almost}</b> quase &middot; <b class="text-rose-800">${c.miss}</b> errei &middot; ${todo} sem avaliação</span>`
+                + (c.ok + c.almost + c.miss ? `<button type="button" id="q-reset" class="underline underline-offset-2 hover:text-slate-700">${resetArmed ? 'Clique de novo para zerar' : 'Zerar avaliações'}</button>` : '');
+            document.querySelectorAll('#q-filter button').forEach(b => { b.className = b.dataset.f === qFilter ? SW_ON : SW_OFF; });
+            $('q-shuffle').textContent = qShuffled ? 'Ordem original' : 'Embaralhar';
+        }
+        function scoreBtn(key, label, cur) {
+            const on = cur === key;
+            const cls = on ? RATE_CLS[key].replace(/ hover:\S+/, '') : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50';
+            return `<button type="button" data-score="${key}" aria-pressed="${on}" class="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm ${cls}">${on ? '&check; ' : ''}${label}</button>`;
+        }
+        // Expressão cortada entre dois turnos: destaca o fim do primeiro e o começo do segundo
+        function splitHL(a, b, expr) {
+            const patOf = str => str.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['\u2019]/g, "['\u2019]").replace(/\s+/g, '\\s+');
+            const words = String(expr).trim().split(/\s+/);
+            for (let k = words.length - 1; k >= 1; k--) {
+                let ma = null, mb = null;
+                try {
+                    ma = new RegExp(patOf(words.slice(0, k).join(' ')) + '(?=[\\s.,;:!?\u2026"\u201d\u2019\']*$)', 'i').exec(a);
+                    mb = new RegExp('^[\\s"\u201c\u2018]*(' + patOf(words.slice(k).join(' ')) + ')', 'i').exec(b);
+                } catch (e) {}
+                if (ma && mb) {
+                    const bi = mb.index + mb[0].length - mb[1].length;
+                    return [
+                        esc(a.slice(0, ma.index)) + '<mark class="expr-mark">' + esc(ma[0]) + '</mark>' + esc(a.slice(ma.index + ma[0].length)),
+                        esc(b.slice(0, bi)) + '<mark class="expr-mark">' + esc(mb[1]) + '</mark>' + esc(b.slice(bi + mb[1].length))
+                    ];
+                }
+            }
+            return [esc(a), esc(b)];
+        }
+        function contextHTML(q) {
+            const ex = exprTurn(q.t, q.expr);
+            let rows = '';
+            const split = ex.from !== ex.idx ? splitHL(turns[ex.from].en, turns[ex.idx].en, q.expr) : null;
+            for (let k = ex.from; k <= ex.idx; k++) {
+                const t = turns[k];
+                const enHtml = split ? split[k - ex.from] : hiHTML(t.en, q.expr);
+                rows += `<div class="cols mb-3">${turnBox(t, 'col-en', 'EN', enHtml)}${turnBox(t, 'col-pt', 'PT', esc(t.pt))}</div>`;
+            }
+            return `<div class="mt-4"><div class="${LABEL}">Trecho da transcrição (a expressão está destacada no inglês)</div>${rows}</div>`;
         }
         function renderQuestion(keepScroll) {
             const body = $('q-body'), prevTop = body.scrollTop;
             const q = questions[qIdx];
             if (!q) { body.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">Nenhuma pergunta carregada.</p>'; return; }
-            const open = revealed.has(qIdx);
+            const open = revealed.has(qIdx), cur = rateOf(qIdx), ctx = ctxOpen.has(qIdx);
             body.innerHTML = `
                 <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     <div class="flex flex-wrap items-center gap-3 mb-5">
@@ -980,30 +1104,70 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
                         <button type="button" data-t="${q.t}" class="inline-flex items-center gap-1.5 font-mono text-xs bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2.5 py-1 rounded-lg font-semibold shadow-sm" title="Ouvir o trecho (pausa sozinho depois do turno)">${PLAY_ICON}${fmtShort(q.t)}</button>
                     </div>
                     <div class="${LABEL}">Question</div>
-                    <p class="text-base leading-relaxed text-slate-700 m-0">${withTimeButtons(q.q)}</p>
+                    <p class="txt-lg text-slate-700 m-0">${withTimeButtons(q.q)}</p>
                     <div class="mt-6 flex flex-wrap items-center gap-3">
                         <button id="reveal-btn" type="button" class="${open ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} font-semibold text-xs py-1.5 px-3 rounded-lg transition-colors shadow-sm">${open ? 'Esconder tradução e resposta' : 'Mostrar tradução e resposta'}</button>
                         ${open ? '' : '<span class="text-xs text-slate-500">Pense na sua resposta antes de abrir.</span>'}
                     </div>
                     ${open ? `<div class="mt-5 bg-indigo-50 border border-indigo-200 rounded-xl p-5">
                         <div class="${LABEL}">Pergunta</div>
-                        <p class="text-sm leading-relaxed text-slate-700 m-0">${withTimeButtons(q.pt)}</p>
+                        <p class="txt text-slate-700 m-0">${withTimeButtons(q.pt)}</p>
                         <div class="${LABEL} mt-4">Resposta</div>
-                        <p class="text-sm leading-relaxed text-slate-700 m-0">${esc(q.ans)}</p>
-                    </div>` : ''}
+                        <p class="txt text-slate-700 m-0">${esc(q.ans)}</p>
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-semibold text-slate-500 mr-1">Como foi a sua resposta?</span>
+                        ${scoreBtn('ok', 'Acertei', cur)}${scoreBtn('almost', 'Quase', cur)}${scoreBtn('miss', 'Errei', cur)}
+                        <button id="ctx-btn" type="button" aria-expanded="${ctx}" class="ml-auto text-xs font-semibold py-1.5 px-3 rounded-lg border transition-colors shadow-sm bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50">${ctx ? 'Esconder trecho' : 'Ver trecho na transcrição'}</button>
+                    </div>
+                    ${ctx ? contextHTML(q) : ''}` : ''}
                 </div>`;
             body.scrollTop = keepScroll ? prevTop : 0;
         }
         function gotoQuestion(i) {
-            if (i < 0 || i >= questions.length) return;
+            if (i === null || i < 0 || i >= questions.length) return;
             qIdx = i; renderNav(); renderQuestion(false);
         }
         $('q-nav').addEventListener('click', e => { const b = e.target.closest('button[data-q]'); if (b) gotoQuestion(Number(b.dataset.q)); });
-        $('q-prev').addEventListener('click', () => gotoQuestion(qIdx - 1));
-        $('q-next').addEventListener('click', () => gotoQuestion(qIdx + 1));
+        $('q-prev').addEventListener('click', () => gotoQuestion(stepFrom(-1)));
+        $('q-next').addEventListener('click', () => gotoQuestion(stepFrom(1)));
+        $('q-filter').addEventListener('click', e => {
+            const b = e.target.closest('button[data-f]');
+            if (!b) return;
+            qFilter = b.dataset.f;
+            if (!matches(qIdx)) {
+                const first = qOrder.find(matches);
+                if (first !== undefined) { gotoQuestion(first); return; }
+                showAlert('Nenhuma pergunta nesse filtro por enquanto.');
+            }
+            renderNav();
+        });
+        $('q-shuffle').addEventListener('click', () => {
+            qShuffled = !qShuffled;
+            qOrder = qOriginal.slice();
+            if (qShuffled) for (let i = qOrder.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [qOrder[i], qOrder[j]] = [qOrder[j], qOrder[i]]; }
+            const first = qOrder.find(matches);
+            gotoQuestion(first !== undefined ? first : qIdx);
+        });
+        let resetTimer = null;
+        $('q-stats').addEventListener('click', e => {
+            if (!e.target.closest('#q-reset')) return;
+            if (!resetArmed) { resetArmed = true; clearTimeout(resetTimer); resetTimer = setTimeout(() => { resetArmed = false; renderNav(); }, 3000); renderNav(); return; }
+            resetArmed = false; clearTimeout(resetTimer); ratings = {}; saveRatings(); renderNav(); renderQuestion(true);
+        });
         $('q-body').addEventListener('click', e => {
             const tb = e.target.closest('[data-t]');
             if (tb) { const q = questions[qIdx]; playFrom(Number(tb.dataset.t), q && q.expr); return; }
+            const sb = e.target.closest('[data-score]');
+            if (sb) {
+                const q = questions[qIdx], v = sb.dataset.score;
+                if (ratings[q.n] === v) delete ratings[q.n]; else ratings[q.n] = v;
+                saveRatings(); renderNav(); renderQuestion(true); return;
+            }
+            if (e.target.closest('#ctx-btn')) {
+                if (ctxOpen.has(qIdx)) ctxOpen.delete(qIdx); else ctxOpen.add(qIdx);
+                renderQuestion(true); return;
+            }
             if (e.target.closest('#reveal-btn')) {
                 if (revealed.has(qIdx)) revealed.delete(qIdx); else revealed.add(qIdx);
                 renderNav(); renderQuestion(true);
@@ -1011,45 +1175,39 @@ Resposta: Traduzi por "sabem como arruinar economias". "Run down" significa dete
         });
         document.addEventListener('keydown', e => {
             if (mode !== 'questions' || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''))) return;
-            if (e.key === 'ArrowRight') gotoQuestion(qIdx + 1);
-            else if (e.key === 'ArrowLeft') gotoQuestion(qIdx - 1);
+            if (e.key === 'ArrowRight') gotoQuestion(stepFrom(1));
+            else if (e.key === 'ArrowLeft') gotoQuestion(stepFrom(-1));
         });
 
         // ================= Modo (transcrições / perguntas) =================
+        const MODES = ['transcripts', 'video', 'questions'];
         function setMode(m) {
             mode = m;
             $('main').dataset.mode = m;
-            show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions');
-            $('mode-transcripts').className = m === 'transcripts' ? SW_ON : SW_OFF;
-            $('mode-questions').className = m === 'questions' ? SW_ON : SW_OFF;
-            $('mode-transcripts').setAttribute('aria-pressed', String(m === 'transcripts'));
-            $('mode-questions').setAttribute('aria-pressed', String(m === 'questions'));
+            show($('view-transcripts'), m === 'transcripts'); show($('view-questions'), m === 'questions'); show($('panel'), m !== 'video');
+            MODES.forEach(k => { const b = $('mode-' + k); b.className = k === m ? SW_ON : SW_OFF; b.setAttribute('aria-pressed', String(k === m)); });
             if (m === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
         }
-        $('mode-transcripts').addEventListener('click', () => setMode('transcripts'));
-        $('mode-questions').addEventListener('click', () => setMode('questions'));
+        MODES.forEach(k => $('mode-' + k).addEventListener('click', () => setMode(k)));
 
-        // ================= Tamanho do vídeo (barra arrastável) =================
-        (function () {
-            const sp = $('splitter'), box = $('video-box'), KEY = 'translationPracticeVideoH';
-            const clampH = h => Math.max(120, Math.min(h, window.innerHeight * 0.65));
-            const apply = h => document.documentElement.style.setProperty('--vh', clampH(h) + 'px');
-            try { const saved = parseFloat(localStorage.getItem(KEY)); if (saved > 0) apply(saved); } catch (e) {}
-            const save = () => { try { localStorage.setItem(KEY, String(Math.round(box.getBoundingClientRect().height))); } catch (e) {} };
-            let startY = 0, startH = 0;
-            sp.addEventListener('pointerdown', e => {
-                startY = e.clientY; startH = box.getBoundingClientRect().height;
-                sp.setPointerCapture(e.pointerId); sp.classList.add('dragging'); e.preventDefault();
-            });
-            sp.addEventListener('pointermove', e => { if (sp.classList.contains('dragging')) apply(startH + (e.clientY - startY)); });
-            const end = e => { if (!sp.classList.contains('dragging')) return; sp.classList.remove('dragging'); save(); };
-            sp.addEventListener('pointerup', end); sp.addEventListener('pointercancel', end);
-            sp.addEventListener('dblclick', () => { document.documentElement.style.removeProperty('--vh'); try { localStorage.removeItem(KEY); } catch (e) {} });
-            sp.addEventListener('keydown', e => {
-                if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-                e.preventDefault(); apply(box.getBoundingClientRect().height + (e.key === 'ArrowDown' ? 30 : -30)); save();
-            });
-        })();
+        // ================= Velocidade do vídeo e tamanho da letra =================
+        function paintRate() {
+            document.querySelectorAll('#rate-switch button').forEach(b => { b.className = Number(b.dataset.rate) === player.rate ? SW_ON.replace('px-3', 'px-2.5') : SW_OFF.replace('px-3', 'px-2.5'); });
+        }
+        $('rate-switch').addEventListener('click', e => { const b = e.target.closest('button[data-rate]'); if (b) { player.setRate(Number(b.dataset.rate)); paintRate(); } });
+        paintRate();
+        const FS = [0.85, 1, 1.15, 1.3, 1.5];   // limites: nenhum tamanho quebra o layout
+        let fsI = 1;
+        try { const sv = parseInt(localStorage.getItem('translationPracticeFont'), 10); if (sv >= 0 && sv < FS.length) fsI = sv; } catch (e) {}
+        function paintFs(keep) {
+            document.documentElement.style.setProperty('--fs', String(FS[fsI]));
+            $('fs-down').disabled = fsI <= 0; $('fs-up').disabled = fsI >= FS.length - 1;
+            try { localStorage.setItem('translationPracticeFont', String(fsI)); } catch (e) {}
+            if (keep && mode === 'transcripts' && activeLo >= 0) requestAnimationFrame(() => scrollToCard($('turn-' + activeLo), false));
+        }
+        $('fs-down').addEventListener('click', () => { if (fsI > 0) { fsI--; paintFs(true); } });
+        $('fs-up').addEventListener('click', () => { if (fsI < FS.length - 1) { fsI++; paintFs(true); } });
+        paintFs(false);
 
         // ================= Vídeo: botões e o relógio que move tudo junto =================
         $('skip-back-btn').addEventListener('click', () => { const t = player.getTime(); if (t != null) player.seek(Math.max(0, t - 5)); });
